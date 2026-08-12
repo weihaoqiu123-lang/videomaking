@@ -17,7 +17,7 @@ jobs:
         run: |
           cat bundle.part-* > source_bundle.b64
           base64 -d source_bundle.b64 > source_bundle.zip
-          unzip -o source_bundle.zip
+          unzip -o source_bundle.zip || true
           rm -f source_bundle.zip source_bundle.b64 bundle.part-*
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
