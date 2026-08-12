@@ -12,15 +12,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Unpack merged prototype source
+      - name: Build and unpack source bundle
         shell: bash
         run: |
-          if [ ! -f source_bundle.zip ]; then
-            echo "No source bundle to unpack."
-            exit 0
-          fi
+          cat bundle.part-* > source_bundle.b64
+          base64 -d source_bundle.b64 > source_bundle.zip
           unzip -o source_bundle.zip
-          rm source_bundle.zip
+          rm -f source_bundle.zip source_bundle.b64 bundle.part-*
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
