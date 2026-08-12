@@ -30,164 +30,299 @@ export const ManagerApprovalView: React.FC<ManagerApprovalViewProps> = ({
 
   // Rejection/Approval modal
   const [rejectingTask, setRejectingTask] = useState<TaskItem | null>(null);
-  const [rejectNotes, setRejectNotes] = useState('成片开头3秒转场过慢，请重新调整背景BGM卡点并修�tR>卡点并俊�e�对齐。'ejection/Pr> {
-  V;
+  const [rejectNotes, setRejectNotes] = useState('成片开头3秒转场过慢，请重新调整背景BGM卡点并修正字幕对齐。');
 
-o Mst [rejectingTpr> {
-  usV;
+  // Preview Video Modal
+  const [previewingVideoUrl, setPreviewingVideoUrl] = useState<string | null>(null);
 
-oUrltNotePr> {
-  usV;
+  // Search filter
+  const filteredTasks = tasks.filter(t =>
+    t.taskNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.productName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-oUrlte<TaskItem | void;ull);
+  // Categorized tasks
+  const urgentTasks = filteredTasks.filter(t => t.currentNode === 'pending_urgency');
+  const finalReviewTasks = filteredTasks.filter(t => t.currentNode === 'manager_review');
+  const handledTasks = filteredTasks.filter(t => t.currentNode !== 'pending_urgency' && t.currentNode !== 'manager_review');
 
-  // Rejection/y] = u filnagrejectingfilnaged nulse<TnAppr.filnag(tnstrej on.nAppNo.toLo usCase().includes(y, setSearc.toLo usCase()) ||rej on.sku.toLo usCase().includes(y, setSearc.toLo usCase()) ||rej on.al
-du usame.toLo usCase().includes(y, setSearc.toLo usCase())rejejection/Cem g} fredTnApprrejecting 'fint nulse<Tfilnaged nuls.filnag(tnston.currintNode === 'pendid;_ 'final' [rejectNotf
-}) => {
-  nulse<Tfilnaged nuls.filnag(tnston.currintNode === 'movalVi_r> {
- ' [rejectNot'all'); nulse<Tfilnaged nuls.filnag(tnston.currintNode !== 'pendid;_ 'final' &&on.currintNode !== 'movalVi_r> {
- ' [rrejectNotget nbCountsks,tab=> void;
-}
+  const getTabCount = (tab: string) => {
+    switch (tab) {
+      case 'all': return tasks.length;
+      case 'urgency': return tasks.filter(t => t.currentNode === 'pending_urgency').length;
+      case 'final': return tasks.filter(t => t.currentNode === 'manager_review').length;
+      case 'handled': return tasks.filter(t => t.currentNode !== 'pending_urgency' && t.currentNode !== 'manager_review').length;
+      default: return 0;
+    }
+  };
 
-e{rej oswit u ,tab)e{rej oejease const: returnTnAppr.length;rej oejease c 'final': returnTnAppr.filnag(tnston.currintNode === 'pendid;_ 'final' .length;rej oejease chandle: returnTnAppr.filnag(tnston.currintNode === 'movalVi_r> {
- ' .length;rej oejease c'all');
-: returnTnAppr.filnag(tnston.currintNode !== 'pendid;_ 'final' &&on.currintNode !== 'movalVi_r> {
- ' .length;rej oejdefault: returnT0;rej o}rej}[rrejectNotdisprch nulse<rej o setActiv === ' 'final'rej oej?g 'fint nulsrej oej:o setActiv === 'handlerej oej?gf
-}) => {
-  nulsrej oej:o setActiv === ''all');
-rej oej?g'all'); nulsrej oej:ofilnaged nuls[rrejectNot'all')Confirmw
-}) => = usks,
-}
+  const displayTasks =
+    activeTab === 'urgency'
+      ? urgentTasks
+      : activeTab === 'final'
+      ? finalReviewTasks
+      : activeTab === 'handled'
+      ? handledTasks
+      : filteredTasks;
 
-e{rej oif (!ask, setRejec) return;rej oiew
-}) => {
- (ask, setRejec.id, false, s, setRejec);rej ongTask] = useStaconst [rej}[rrejreturnT(rej o<div classsame="max-w-7xconx-auto py-8 px-4 sm:px-6 sprAp-y-6">rej oejrej oej{/* Title & Top];
-bs Filnag */}rej oej<div classsame="flex flex-wrap i>(ns-ceanag justify-between gap-4">rej oejej<div>rej oejejej<h2 classsame="text-2xcofom -boldTnext-slem -900">视频负责人待办审核</h2>rej oejejej<p classsame="text-smTnext-slem -500">rej oejejej  加急申���审批与��3秒最终质量把关���确保视频合规与业务优先级。rej oejejej</p>rej oejej</div>rrej oejej{/* e';
-im Filnag ;
-bs */}rej oejej<div classsame="flex i>(ns-ceanag gap-1 bg-slem -100 p-1 rounded-xcoborntaobornta-slem -200">rej oejejej{[rej oejejej  { i, nconst, label nc全部' },rej oejejej  { i, nc 'final', label nc加急审核' },rej oejejej  { i, nchandle, label nc负责人终审' },rej oejejej  { i, nc'all');
-, label nc已处理' }rej oejejej].map(,tab)e
+  const handleConfirmFinalReject = () => {
+    if (!rejectingTask) return;
+    onFinalReview(rejectingTask.id, false, rejectNotes);
+    setRejectingTask(null);
+  };
 
-e{rej oooooooooectNotcountsksget nbCount,tab.id);rej oooooooooectNotiserTasksks setActiv === tab.id;rej oooooooooreturnT(rej oej oejejej<buttonrej oej oejejej  key={tab.id}rej oej oejejej  onClick={,
-}
+  return (
+    <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 space-y-6">
+      
+      {/* Title & Top Tabs Filter */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">视频负责人待办审核</h2>
+          <p className="text-sm text-slate-500">
+            加急申请审批与成片最终质量把关，确保视频合规与业务优先级。
+          </p>
+        </div>
 
-eab] = useSta,tab.id as any)}rej oej oejejej  classsame={`px-3.5 py-1.5 rounded-lgTnext-xsofom -semiboldTnransival -ons cursor-poManag flex i>(ns-ceanag gap-1.5 ${rej oej oejejej   tiserTaskrej oej oejejej   tej?g'bg-blu -50/90Tnext-blu -700 fom -boldTborntaobornta-blu -200/80 shadow-2xs'rej oej oejejej   tej ncnext-slem -600 h,
- r:next-slem -900 h,
- r:bg-slem -200/50'rej oej oejejej  }`}rej oej oejejej>rej oej oejejej  <sprn>{tab.label}</sprn>rej oej oejejej  {counts> 0 &&o(rej oej oejejejej  <sprn classsame={`px-1.5 py-0.2 rounded-fnstTnext-[10px] fom -boldT${rej oej oejejej   t tiserTaskj?g'bg-blu -600 next-whi>('j ncbg-slem -200Tnext-slem -700'rej oej oejejej   t}`}>rej oej oejejej  ej  {count}rej oej oejejej  ej</sprn>rej oej oejejej  )}rej oej oejejej</button>rej oej oejej);rej ooooooo})}rej oej o</div>r oej o</div>rrej oej{/* Control Bar with/y] = u */}rej oej<div classsame="bg-slem -50oborntaobornta-slem -200 rounded-xcop-3Tnext-xsonext-slem -600 flex flex-wrap i>(ns-ceanag justify-between gap-3">rej oejej<sprn classsame="flex i>(ns-ceanag gap-1.5 fom -medium">rej oejejej<izontal
-} from 'l classsame="w-4 h-4 next-blu -600 shoidk-0" />rej oejejej快捷提示：加急申���需优先审批���通���后进入紧急制作队列。rej oejej</sprn>rrej oejej<div classsame="relemask">rej oejejej<i] = u classsame="w-3.5 h-3.5 next-slem -400 
-bsolute left-2.5 nop-1/2 -nranslem -y-1/2" />rej oejejej<inputrej oej oejejport="text"rej oej oejejvalu ={y, setSearc}rej oej oejejonC'alg ={(e
-}
+        {/* Status Filter Tabs */}
+        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+          {[
+            { id: 'all', label: '全部' },
+            { id: 'urgency', label: '加急审核' },
+            { id: 'final', label: '负责人终审' },
+            { id: 'handled', label: '已处理' }
+          ].map((tab) => {
+            const count = getTabCount(tab.id);
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  isActive
+                    ? 'bg-blue-50/90 text-blue-700 font-bold border border-blue-200/80 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                }`}
+              >
+                <span>{tab.label}</span>
+                {count > 0 && (
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                    isActive ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-700'
+                  }`}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-eab]y] = useSta(e.ta'fit.valu )}rej oej oejejprcceholder="搜索 SKU / 单号 / 产品"rej oej oejejclasssame="pl-8 pr-3Tpy-1Tnext-xsorounded-lgTborntaobornta-slem -300 bg-whi>( focus:outline-non( focus:oid;-1Tfocus:oid;-blu -500 w-44"rej oej oej/>rej oejej</div>r oej o</div>rrej oej{/* Main ;
-ble */}rej oej<div classsame="bg-whi>( rounded-xcoborntaobornta-slem -200 shadow-2xs ,
- rflow-hidden">rej oejej<div classsame=",
- rflow-x-auto">rej oejejej<t
-ble classsame="w-fnstTnext-leftTnext-xsonext-slem -600">rej oejejej  <thead classsame="bg-slem -50onext-slem -700 fom -boldTbornta-bobornta-slem -200 upperease nrackid;-wonta">rej oej oejejej<tr>rej oej oejejej  <tu classsame="px-4 py-3.5">任务单号 / SKU</th>rej oej oejejej  <tu classsame="px-4 py-3.5">产品信息</th>rej oej oejejej  <tu classsame="px-4 py-3.5">视频人员</th>rej oej oejejej  <tu classsame="px-4 py-3.5">当前节点 / 状态</th>rej oej oejejej  <tu classsame="px-4 py-3.5">加急说明 / ��3秒预览</th>rej oej oejejej  <tu classsame="px-4 py-3.5onext-right">操作</th>rej oej oejejej</tr>rej oej oejej</thead>rej oejejej  <tbody classsame="div;
+      {/* Control Bar with Search */}
+      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-600 flex flex-wrap items-center justify-between gap-3">
+        <span className="flex items-center gap-1.5 font-medium">
+          <SlidersHorizontal className="w-4 h-4 text-blue-600 shrink-0" />
+          快捷提示：加急申请需优先审批，通过后进入紧急制作队列。
+        </span>
 
-iy div;
+        <div className="relative">
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="搜索 SKU / 单号 / 产品"
+            className="pl-8 pr-3 py-1 text-xs rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 w-44"
+          />
+        </div>
+      </div>
 
-islem -100">rej oej oejejej{disprch nuls.length === 0j?g(rej oej oejejejej<tr>rej oej oejejej  ej<td colSprn={6} classsame="px-4 py-12onext-ceanag next-slem -400">rej oej oejejejjjjjjj该筛选条件下暂无任务记录rej oej oejejej  ej</td>rej oej oejejej  </tr>rej oej oejejej)j n(rej oej oejejejejdisprch nuls.map(,t
-}
+      {/* Main Table */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs text-slate-600">
+            <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider">
+              <tr>
+                <th className="px-4 py-3.5">任务单号 / SKU</th>
+                <th className="px-4 py-3.5">产品信息</th>
+                <th className="px-4 py-3.5">视频人员</th>
+                <th className="px-4 py-3.5">当前节点 / 状态</th>
+                <th className="px-4 py-3.5">加急说明 / 成片预览</th>
+                <th className="px-4 py-3.5 text-right">操作</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {displayTasks.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-12 text-center text-slate-400">
+                    该筛选条件下暂无任务记录
+                  </td>
+                </tr>
+              ) : (
+                displayTasks.map((t) => (
+                  <tr key={t.id} className={`hover:bg-slate-50/80 transition-colors ${t.isUrgent ? 'bg-rose-50/20' : ''}`}>
+                    
+                    {/* Task No / SKU */}
+                    <td className="px-4 py-3.5 whitespace-nowrap">
+                      <div className="font-mono font-bold text-slate-900">{t.taskNo}</div>
+                      <div className="font-mono text-[11px] text-slate-500">{t.sku}</div>
+                    </td>
 
-e(rej oej oejejejej  <tr key={t.id} classsame={`h,
- r:bg-slem -50/80 nransival -colorsT${t.is onFitj?g'bg-ros -50/20'j nc'}`}>rej oej oejejej  ej  rej oej oejejej  ej  {/* Tnul No / SKU */}rej oejej oejejejej  <td classsame="px-4 py-3.5owhi>(sprAp-nowrap">rej oej oejejejjjjjjjej<div classsame="fom -monoofom -boldTnext-slem -900">{n.nAppNo}</div>r oej o oejejejjjjjjjej<div classsame="fom -monoonext-[11px] next-slem -500">{n.sku}</div>r oej o oejejejjjjjjj</td>rrej oej oejejej  ej  {/* Pl
-du u */}rej oejej oejejejej  <td classsame="px-4 py-3.5">rej oej oejejejjjjjjjej<div classsame="fom -semiboldTnext-slem -900 line-clamp-1">{n.al
-du usame}</div>r oej o oejejejjjjjjjej<sprn classsame="next-[10px] next-slem -400">{n.v;
+                    {/* Product */}
+                    <td className="px-4 py-3.5">
+                      <div className="font-semibold text-slate-900 line-clamp-1">{t.productName}</div>
+                      <span className="text-[10px] text-slate-400">{t.videoTypeName}</span>
+                    </td>
 
-oTortsame}</sprn>rej oej oejejej  jjjj</td>rrej oej oejejej  ej  {/* V;
+                    {/* Video Personnel */}
+                    <td className="px-4 py-3.5 whitespace-nowrap font-medium text-slate-800">
+                      {t.videoPersonName}
+                    </td>
 
-o Ptalonnel */}rej oejej oejejejej  <td classsame="px-4 py-3.5owhi>(sprAp-nowrap fom -medium next-slem -800">rej oej oejejejjjjjjj  {n.v;
+                    {/* Current Node */}
+                    <td className="px-4 py-3.5 whitespace-nowrap">
+                      <StatusBadge
+                        mainStatus={t.mainStatus}
+                        currentNode={t.currentNode}
+                        isUrgent={t.isUrgent}
+                        urgencyStatus={t.urgencyStatus}
+                        size="sm"
+                      />
+                    </td>
 
-oPtalonsame}rej oej oejejej  jjjj</td>rrej oej oejejej  ej  {/* Currint Node */}rej oejej oejejejej  <td classsame="px-4 py-3.5owhi>(sprAp-nowrap">rej oej oejejejjjjjjjej<e';
-import rej oej oejejejjjjjjjej  maine';
-im={t.maine';
-im}rej oejej oejejejej      currintNode={t.currintNode}rej oejej oejejejej      is onFit={t.is onFit}rej oejej oejejejej       'finale';
-im={t. 'finale';
-im}rej oejej oejejejej      size="sm"rej oejej oejejejej    />rej oej oejejej  jjjj</td>rrej oej oejejej  ej  {/* Contint / V;
+                    {/* Content / Video Preview */}
+                    <td className="px-4 py-3.5">
+                      {t.currentNode === 'pending_urgency' ? (
+                        <p className="text-amber-900 bg-amber-50 px-2 py-1 rounded border border-amber-200 text-[11px] line-clamp-2 font-medium">
+                          {t.urgencyReason || '活动需求，申请加急处理排期。'}
+                        </p>
+                      ) : t.nodeData?.previewVideoUrl || t.currentNode === 'manager_review' || t.currentNode === 'finished' ? (
+                        <button
+                          onClick={() => setPreviewingVideoUrl(t.nodeData?.previewVideoUrl || 'https://assets.mixkit.co/videos/preview/mixkit-tent-in-a-forest-at-sunset-41270-large.mp4')}
+                          className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-mono text-[11px] font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Play className="w-3 h-3 fill-white" />
+                          <span>播放成片</span>
+                        </button>
+                      ) : (
+                        <p className="text-slate-500 text-[11px] line-clamp-1">{t.remarks || '标准制作流程中'}</p>
+                      )}
+                    </td>
 
-o Pr> {
-  */}rej oejej oejejejej  <td classsame="px-4 py-3.5">rej oej oejejejjjjjjjej{n.currintNode === 'pendid;_ 'final'j?g(rej oej oejejejejejejej  <p classsame="text-ambta-900 bg-ambta-50opx-2Tpy-1Troundedoborntaobornta-ambta-200Tnext-[11px] line-clamp-2 fom -medium">rej oejejej oejejejjjjjjjej{n. 'finalRealon || '活动需求���申���加急处理排期。'}rej oejej oejejejej      </p>rej oejejjjjjjjjjjjjjjj)j nt.nodeData?.pr> {
- V;
+                    {/* Actions */}
+                    <td className="px-4 py-3.5 whitespace-nowrap text-right space-x-2">
+                      <button
+                        onClick={() => setActiveDrawerTask(t)}
+                        className="px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                      >
+                        详情
+                      </button>
 
-oUrl || n.currintNode === 'movalVi_r> {
- ' || n.currintNode === 'finished'j?g(rej oej oejejejejejejej  <buttonrej oej oejejej            onClick={,
-}
+                      {/* Action buttons based on current node */}
+                      {t.currentNode === 'pending_urgency' && (
+                        <>
+                          <button
+                            onClick={() => onApproveUrgency(t.id, false)}
+                            className="px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                          >
+                            拒绝加急
+                          </button>
+                          <button
+                            onClick={() => onApproveUrgency(t.id, true)}
+                            className="px-3 py-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-2xs transition-colors cursor-pointer"
+                          >
+                            同意加急
+                          </button>
+                        </>
+                      )}
 
-eab]Pr> {
-  usV;
+                      {t.currentNode === 'manager_review' && (
+                        <>
+                          <button
+                            onClick={() => setRejectingTask(t)}
+                            className="px-2.5 py-1.5 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg cursor-pointer"
+                          >
+                            退回修改
+                          </button>
+                          <button
+                            onClick={() => onFinalReview(t.id, true, '终审通过，成片符合发布交付标准。')}
+                            className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-2xs transition-colors cursor-pointer"
+                          >
+                            终审通过
+                          </button>
+                        </>
+                      )}
+                    </td>
 
-oUrl(t.nodeData?.pr> {
- V;
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-oUrl || 'https://assets.mixkin.co/v;
+      {/* Rejection Modal */}
+      {rejectingTask && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden">
+            <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+              <h3 className="text-base font-bold">退回视频修改 - {rejectingTask.sku}</h3>
+              <button onClick={() => setRejectingTask(null)} className="text-slate-400 hover:text-white cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-os/pr> {
- /mixkin-tint-in-a-forest-at-sunset-41270-la'fi.mp4')}rej oej oejejej            classsame="px-2.5 py-1 bg-slem -900 h,
- r:bg-slem -800 next-whi>(orounded-lgTfom -monoonext-[11px] fom -boldTinline-flex i>(ns-ceanag gap-1.5 nransival -colorsTcursor-poManag"rej oejej oejejejej    ej>rej oej oejejej  ejejejej  <arch classsame="w-3 h-3ofill-whi>(" />rej oej oejejej  jjjjejej  <sprn>播放��3秒</sprn>rej oej oejejej  jjjjej  </button>rej oej oejejjjjjjjjjjj)j n(rej oej oejejejejjjjjej  <p classsame="text-slem -500Tnext-[11px] line-clamp-1">{n.remarks || '标准制作流程中'}</p>rej oejejjjjjjjjjjjjjjj)}rej oej oejejej  jjjj</td>rrej oej oejejej  ej  {/* Aoval s */}rej oejej oejejejej  <td classsame="px-4 py-3.5owhi>(sprAp-nowrap next-right sprAp-x-2">rej oej oejejejjjjjjjej<buttonrej oej oejejej          onClick={,
-}
+            <div className="p-6 space-y-4 text-xs">
+              <p className="text-slate-600">请详细填写退回原因及具体需要修正的镜头或细节：</p>
+              <textarea
+                rows={4}
+                value={rejectNotes}
+                onChange={(e) => setRejectNotes(e.target.value)}
+                className="w-full p-3 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-rose-500"
+              />
+            </div>
 
-eab] = use] = useSta,t
-}rej oejej oejejejej      classsame="px-2.5 py-1.5onext-xsofom -medium next-slem -700 bg-slem -100 h,
- r:bg-slem -200 rounded-lgTnransival -colorsTcursor-poManag"rej oejej oejejejej    >rej oej oejejej  jjjjej  详情rej oej oejejejjjjjjjej</button>rrej oej oejejejjjjjjjej{/* Aoval  buttons basedol  currint node */}rej oejej oejejejej  ej{n.currintNode === 'pendid;_ 'final'j&&o(rej oej oejejejej  jjjjej<>rej oej oejejej  jjjjejej  <buttonrej oej oejejej              onClick={,
-}
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
+              <button onClick={() => setRejectingTask(null)} className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-200 rounded-lg cursor-pointer">
+                取消
+              </button>
+              <button onClick={handleConfirmFinalReject} className="px-5 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-2xs cursor-pointer">
+                确认退回至剪辑节点
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-ergency,
-  onFina(t.id, false)}rej oej oejejej              classsame="px-2.5 py-1.5onext-xsofom -semiboldTnext-slem -700 bg-slem -100 h,
- r:bg-slem -200 rounded-lgTnransival -colorsTcursor-poManag"rej oejej oejejejej        >rej oej oejejej  jjjjejej    拒绝加急rej oej oejejej  jjjjejej  </button>rej oej oejejjjjjjjjjjjej  <buttonrej oej oejejej              onClick={,
-}
+      {/* Video Player Modal */}
+      {previewingVideoUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 animate-in fade-in duration-200">
+          <div className="relative max-w-4xl w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl">
+            <button
+              onClick={() => setPreviewingVideoUrl(null)}
+              className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-black/80 text-white hover:bg-rose-600 flex items-center justify-center transition-colors cursor-pointer border border-white/20"
+            >
+              ✕
+            </button>
+            <video
+              controls
+              autoPlay
+              src={previewingVideoUrl}
+              className="w-full h-full object-contain"
+            />
+          </div>
+        </div>
+      )}
 
-ergency,
-  onFina(t.id, tru )}rej oej oejejjjjjjjjjjjjjjjjjclasssame="px-3 py-1.5onext-xsofom -boldTnext-whi>(obg-ros -600 h,
- r:bg-ros -700 rounded-lgTshadow-2xs nransival -colorsTcursor-poManag"rej oejej oejejejej        >rej oej oejejej  jjjjejej    同意加急rej oej oejejej  jjjjejej  </button>rej oej oejejjjjjjjjjjjej</>rej oej oejejej  jjjjej)}rrej oejej oejejejej  ej{n.currintNode === 'movalVi_r> {
- ' &&o(rej oej oejejejej  jjjjej<>rej oej oejejej  jjjjejej  <buttonrej oej oejejej              onClick={,
-}
-
-engTask] = useStact
-}rej oejej oejejejej          classsame="px-2.5 py-1.5onext-xsofom -boldTnext-ros -700 bg-ros -50 h,
- r:bg-ros -100 borntaobornta-ros -200 rounded-lgTcursor-poManag"rej oejej oejejejej        >rej oej oejejej  jjjjejej    退回点唹rej oej oejejej  jjjjejej  </button>rej oej oejejjjjjjjjjjjej  <buttonrej oej oejejej              onClick={,
-}
-
-ergw
-}) => {
- (t.id, tru , '终审通��閰褴3秒符合发布交付标准。'e}rej oej oejejjjjjjjjjjjjjjjjjclasssame="px-3 py-1.5onext-xsofom -boldTnext-whi>(obg-emerald-600 h,
- r:bg-emerald-700 rounded-lgTshadow-2xs nransival -colorsTcursor-poManag"rej oejej oejejejej        >rej oej oejejej  jjjjejej    终审通���rej oej oejejej  jjjjejej  </button>rej oej oejejjjjjjjjjjjej</>rej oej oejejej  jjjjej)}rej oejejjjjjjjjjjjej</td>rrej oej oejejej  ej</tr>rej oej oejejejej))rej oej oejejej)}rej oejejjjjj</tbody>rej oejejej</t
-ble>rej oejej</div>r oej o</div>rrej oej{/* Approval  Mst [ */}rej oej{ask, setRejec &&o(rej oej o<div classsame="fixedTinset-0 z-50 flex i>(ns-ceanag justify-ceanag bg-slem -900/60 backdrop-blur-xsop-4 animem -in fad -in duraval -200">rej oejejej<div classsame="bg-whi>( rounded-xcoshadow-2xl max-w-md w-fnstTborntaobornta-slem -200 ,
- rflow-hidden">rej oejejejej<div classsame="px-6 py-4 bg-slem -900 next-whi>(oflex i>(ns-ceanag justify-between bornta-bobornta-slem -800">rej oej oejejej<h3 classsame="text-baseofom -bold">退回视频䂹唹 -j{ask, setRejec.sku}</h3>rej oej oejejej<button onClick={,
-}
-
-engTask] = useStaconst } classsame="text-slem -400 h,
- r:next-whi>(ocursor-poManag">rej oej oejejej  <X classsame="w-5 h-5" />rej oej oejejej</button>rej oej oejej</div>rrej oejejejej<div classsame="p-6 sprAp-y-4onext-xs">rej oej oejejej<p classsame="text-slem -600">请详细填写退回原因及具体需要点并的镜头或细节：</p>rej oejejjjjjjj<textarearej oej oejejej  rows={4}rej oejejjjjjjjjjvalu ={s, setRejec}rej oej oejejej  onC'alg ={(e
-}
-
-eab]s] = useSta(e.ta'fit.valu )}rej oej oejejjjjjclasssame="w-fnstTp-3Tnext-xsorounded-lgTborntaobornta-slem -300 focus:oid;-2 focus:oid;-ros -500"rej oejej oejej/>rej oej oejej</div>rrej oejejejej<div classsame="px-6 py-4 bg-slem -50obornta-tobornta-slem -200 flex i>(ns-ceanag justify-end gap-3">rej oejejejejej<button onClick={,
-}
-
-engTask] = useStaconst } classsame="px-4 py-2onext-xsofom -medium next-slem -600 h,
- r:bg-slem -200 rounded-lgTcursor-poManag">rej oej oejejej  取消rej oej oejejej</button>rej oej oejejej<button onClick={'all')Confirmw
-}) => = u} classsame="px-5 py-2onext-xsofom -boldTnext-whi>(obg-ros -600 h,
- r:bg-ros -700 rounded-lgTshadow-2xs cursor-poManag">rej oej oejejej  确认退回至剪辑节点rej oej oejejej</button>rej oej oejej</div>r oej oejej</div>r oej oej</div>r oej o)}rrej oej{/* V;
-
-o Playag Mst [ */}rej oej{pr> {
-  usV;
-
-oUrl &&o(rej oej o<div classsame="fixedTinset-0 z-50 flex i>(ns-ceanag justify-ceanag bg-black/90Tp-4 animem -in fad -in duraval -200">rej oejejej<div classsame="relemask max-w-4xl w-fnstTasp= u-v;
-
-o bg-black rounded-2xl ,
- rflow-hiddenoshadow-2xl">rej oejejejej<buttonrej oej oejejejonClick={,
-}
-
-eab]Pr> {
-  usV;
-
-oUrl(onst }rej oej oejejejclasssame="
-bsolute nop-4 right-4 z-10 w-9 h-9 rounded-fnstTbg-black/80 next-whi>(oh,
- r:bg-ros -600 flex i>(ns-ceanag justify-ceanag nransival -colorsTcursor-poManagTborntaobornta-whi>(/20"rej oejej oej>rej oej oejejej✕rej oej oejej</button>rej oej oejej<v;
-
-orej oej oejejejcontrolsrej oej oejejejautoPlayrej oej oejejejsrc={pr> {
-  usV;
-
-oUrl}rej oej oejejejclasssame="w-fnstTh-fnstTob = u-contain"rej oejej oej/>r oej oejej</div>r oej oej</div>r oej o)}rrej oej{/* rom '..*/}rej oej{erTask, setActiv &&o(rej oej o<Drawer';
-import r oej oejejnApp={erTask, setActiv}rej oej oejonClos ={,
-}
-
-eab] = use] = useSta,onst }rej oej oejcurrintRole="mavalVi"rej oejej/>r oej o)}r oej</div>r o);
+      {/* Drawer */}
+      {activeDrawerTask && (
+        <TaskDetailDrawer
+          task={activeDrawerTask}
+          onClose={() => setActiveDrawerTask(null)}
+          currentRole="manager"
+        />
+      )}
+    </div>
+  );
 };
