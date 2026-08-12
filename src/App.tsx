@@ -1,78 +1,338 @@
-import React, { useMemo, useState } from 'react';
-import { Video, Sparkles, ArrowRight, Play, X, Zap, Camera, Wrench, Scissors, Clapperboard, Search, Check } from 'lucide-react';
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-type Role = 'operator' | 'creator' | 'manager';
-type Page = 'portfolio' | 'create' | 'orders' | 'creatorTasks' | 'managerTasks' | 'overview';
-type TaskStatus = '待处理' | '拍摄中' | '剪辑中' | '负责人终审中' | '已完成';
-type VideoType = { id:string; name:string; short:string; icon:React.ReactNode; needsShoot:boolean };
-type Creator = { id:string; name:string; avatar:string; specialty:string; tasks:number; status:'正常'|'较忙'|'满载'; estimated:string };
-type Work = { id:string; typeId:string; title:string; product:string; duration:string; image:string; description:string };
-type Task = { id:string; no:string; sku:string; product:string; typeId:string; typeName:string; creatorId:string; creatorName:string; urgent:boolean; urgentStatus?:'待审核'|'已通过'|'未通过'; status:TaskStatus; createdAt:string; updatedAt:string; remarks?:string };
+import React, { useState } from 'react';
+import { RoleType, NavPage, TaskItem, NodeStage, VideoPersonnel } from './types';
+import { INITIAL_TASKS, INITIAL_VIDEO_PERSONNEL, INITIAL_VIDEO_TYPES } from './data/mockData';
+import { PortfolioItem } from './data/portfolioData';
+import { Header } from './components/Header';
+import { Navigation } from './components/Navigation';
+import { OrderCreateView } from './views/OrderCreateView';
+import { OperatorOrdersView } from './views/OperatorOrdersView';
+import { VideoTasksView } from './views/VideoTasksView';
+import { ManagerApprovalView } from './views/ManagerApprovalView';
+import { ManagerOverviewView } from './views/ManagerOverviewView';
+import { PortfolioView } from './components/PortfolioView';
+import { getMainStatusFromNode } from './utils/taskUtils';
 
-const videoTypes: VideoType[] = [
-  { id:'live', name:'产品实拍展示视频', short:'真实场景拍摄，展示产品质感、功能与使用体验。', icon:<Camera size={19}/>, needsShoot:true },
-  { id:'install', name:'产品安装视频', short:'清晰展示拆解、安装与关键操作流程。', icon:<Wrench size={19}/>, needsShoot:true },
-  { id:'ai', name:'产品AI展示视频', short:'通过AI场景与视觉设计完成产品内容表达。', icon:<Sparkles size={19}/>, needsShoot:false },
-  { id:'ad', name:'产品AI精品广告', short:'强调创意、视觉质感与精品化广告表达。', icon:<Clapperboard size={19}/>, needsShoot:false },
-  { id:'edit', name:'纯剪辑任务', short:'基于现有素材完成剪辑、节奏与基础包装。', icon:<Scissors size={19}/>, needsShoot:false },
-];
-const creators: Creator[] = [
-  { id:'c1', name:'张晨', avatar:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=160&q=80', specialty:'产品实拍 / 安装视频', tasks:5, status:'正常', estimated:'预计约1周后开始' },
-  { id:'c2', name:'李浩', avatar:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=160&q=80', specialty:'实拍 / 剪辑', tasks:8, status:'正常', estimated:'预计约2周后开始' },
-  { id:'c3', name:'王敏', avatar:'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=160&q=80', specialty:'AI视频 / 精品广告', tasks:13, status:'较忙', estimated:'预计约3周后开始' },
-  { id:'c4', name:'陈凯', avatar:'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=160&q=80', specialty:'实拍 / 剪辑', tasks:18, status:'较忙', estimated:'预计约4周后开始' },
-  { id:'c5', name:'周宇', avatar:'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=80', specialty:'视频剪辑', tasks:20, status:'满载', estimated:'暂不可接单' },
-  { id:'c6', name:'赵琪', avatar:'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=160&q=80', specialty:'数码实拍 / 测评', tasks:3, status:'正常', estimated:'预计约1周后开始' },
-];
-const imagePool = [
-  'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=82',
-  'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=82',
-  'https://images.unsplash.com/photo-1585515320310-259814833e62?auto=format&fit=crop&w=1200&q=82',
-  'https://images.unsplash.com/photo-1571068316344-75bc76f77890?auto=format&fit=crop&w=1200&q=82',
-  'https://images.unsplash.com/photo-1484101403633-562f891dc89a?auto=format&fit=crop&w=1200&q=82',
-  'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&w=1200&q=82',
-  'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=1200&q=82',
-  'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=82',
-];
-const workTitles = [['SUMMER HOME','DETAIL IN MOTION','REAL EXPERIENCE'],['EASY ASSEMBLY','3 STEPS SETUP','BUILD WITH CLARITY'],['NEW ERA','NATURAL SYSTEM','FLOW CONTROL'],['AURORA','SKYLINE 2030','AETHER'],['CUT FOR CONVERSION','SOCIAL RHYTHM','BRAND IN MOTION']];
-const works: Work[] = videoTypes.flatMap((t,ti)=>[0,1,2].map(n=>({ id:`${t.id}-${n+1}`, typeId:t.id, title:workTitles[ti][n], product:['户外智能凉亭','模块家具','智能空气净化器','旗舰产品广告','社媒投放素材'][ti], duration:['00:36','00:58','00:28'][n], image:imagePool[(ti*2+n)%imagePool.length], description:t.short })));
-const initialTasks: Task[] = [
-  { id:'t1', no:'VTD-20260811-001', sku:'HUAWEI123', product:'Huawei Outdoor Smart Canopy', typeId:'live', typeName:'产品实拍展示视频', creatorId:'c1', creatorName:'张晨', urgent:false, status:'拍摄中', createdAt:'2026-08-11 09:30', updatedAt:'2026-08-11 11:20' },
-  { id:'t2', no:'VTD-20260811-002', sku:'TP10241PI', product:'电子炉灶厨房玩具套装', typeId:'install', typeName:'产品安装视频', creatorId:'c1', creatorName:'张晨', urgent:true, urgentStatus:'已通过', status:'待处理', createdAt:'2026-08-11 10:00', updatedAt:'2026-08-11 10:30' },
-  { id:'t3', no:'VTD-20260811-003', sku:'SP38244US', product:'城市折叠越野电动自行车', typeId:'ad', typeName:'产品AI精品广告', creatorId:'c3', creatorName:'王敏', urgent:true, urgentStatus:'待审核', status:'待处理', createdAt:'2026-08-11 11:00', updatedAt:'2026-08-11 11:00' },
-];
-const services = [
-  ['产品AI展示视频','无需寄送样品，适合快速生成多场景动态展示。','80 USD 起 · 内部参考'],
-  ['产品AI精品广告','面向重点产品，以完整创意概念和精细制作建立视觉记忆点。','350 USD · 内部参考'],
-  ['产品实拍展示视频','通过真实样品拍摄材质、细节和使用过程。','200 USD · 内部参考'],
-  ['产品安装视频','真实拍摄安装步骤与关键操作，降低理解成本。','30 USD 起 · 内部参考'],
-  ['纯剪辑任务','使用现成素材完成调整、混剪和专业成片。','评估后报价'],
-];
+export default function App() {
+  const [currentRole, setCurrentRole] = useState<RoleType>('operator');
+  const [currentPage, setCurrentPage] = useState<NavPage>('portfolio');
 
-function App(){
-  const [role,setRole]=useState<Role>('operator'); const [page,setPage]=useState<Page>('portfolio'); const [tasks,setTasks]=useState<Task[]>(initialTasks); const [referenceWork,setReferenceWork]=useState<Work|null>(null); const [preType,setPreType]=useState(''); const [workModal,setWorkModal]=useState<Work|null>(null);
-  const goRole=(r:Role)=>{setRole(r);setPage(r==='operator'?'portfolio':r==='creator'?'creatorTasks':'managerTasks')};
-  const goCreate=(typeId?:string,work?:Work)=>{setRole('operator');setPreType(typeId||work?.typeId||'');setReferenceWork(work||null);setPage('create');window.scrollTo({top:0,behavior:'smooth'})};
-  return <div className="app-shell"><header className="system-header"><div className="system-brand"><span className="brand-icon"><Video size={19}/></span><div><b>视频任务管理</b><small>V1.0 Demo</small></div></div><div className="role-switch">{([['operator','运营人员'],['creator','视频人员'],['manager','视频负责人']] as [Role,string][]).map(([r,l])=><button key={r} className={role===r?'active':''} onClick={()=>goRole(r)}>{l}</button>)}</div><span className="online">● 当前角色：{role==='operator'?'运营人员':role==='creator'?'视频人员':'视频负责人'}</span></header>
-    <nav className="system-nav">{role==='operator'&&<>{[['portfolio','作品集'],['create','创建视频需求'],['orders','我的视频订单']].map(([p,l])=><button key={p} className={page===p?'active':''} onClick={()=>setPage(p as Page)}>{l}</button>)}</>}{role==='creator'&&<button className="active">我的视频任务待办</button>}{role==='manager'&&<><button className={page==='managerTasks'?'active':''} onClick={()=>setPage('managerTasks')}>待办审核（加急/终审）</button><button className={page==='overview'?'active':''} onClick={()=>setPage('overview')}>视频任务总览与监控</button></>}</nav>
-    {role==='operator'&&page==='portfolio'&&<Portfolio onCreate={goCreate} onWork={setWorkModal}/>} {role==='operator'&&page==='create'&&<CreateRequest initialType={preType} referenceWork={referenceWork} onOpenPortfolio={()=>setPage('portfolio')} onSubmit={t=>{setTasks(v=>[t,...v]);setPage('orders')}}/>} {role==='operator'&&page==='orders'&&<Orders tasks={tasks}/>} {role==='creator'&&<CreatorTasks tasks={tasks} setTasks={setTasks}/>} {role==='manager'&&page==='managerTasks'&&<ManagerTasks tasks={tasks} setTasks={setTasks}/>} {role==='manager'&&page==='overview'&&<Overview tasks={tasks}/>} {workModal&&<WorkModal work={workModal} onClose={()=>setWorkModal(null)} onCreate={()=>{setWorkModal(null);goCreate(workModal.typeId,workModal)}}/>}
-  </div>
+  // Portfolio State & Pre-selected Order Options
+  const [referenceWork, setReferenceWork] = useState<PortfolioItem | null>(null);
+  const [preselectedVideoTypeId, setPreselectedVideoTypeId] = useState<string | null>(null);
+
+  // Application State
+  const [tasks, setTasks] = useState<TaskItem[]>(INITIAL_TASKS);
+  const [videoPersonnel, setVideoPersonnel] = useState<VideoPersonnel[]>(INITIAL_VIDEO_PERSONNEL);
+  const [videoTypes] = useState(INITIAL_VIDEO_TYPES);
+
+  // Badge Counts
+  const pendingUrgentCount = tasks.filter(t => t.currentNode === 'pending_urgency').length;
+  const pendingManagerReviewCount = tasks.filter(t => t.currentNode === 'manager_review').length;
+  const pendingVideoCount = tasks.filter(t => t.currentNode === 'appointment' || t.currentNode === 'shooting' || t.currentNode === 'editing').length;
+
+  // Handle Role Switching
+  const handleRoleChange = (role: RoleType) => {
+    setCurrentRole(role);
+    if (role === 'operator') setCurrentPage('portfolio');
+    else if (role === 'video_creator') setCurrentPage('video_tasks');
+    else if (role === 'manager') setCurrentPage('manager_approval');
+  };
+
+  // Task Creation Handler
+  const handleCreateTask = (
+    newTaskData: Omit<TaskItem, 'id' | 'taskNo' | 'createdAt' | 'updatedAt' | 'logs' | 'nodeData'>
+  ) => {
+    const taskCount = tasks.length + 1;
+    const taskNo = `VT20260810${taskCount.toString().padStart(3, '0')}`;
+    const nowStr = new Date().toISOString().replace('T', ' ').slice(0, 16);
+
+    const newTask: TaskItem = {
+      ...newTaskData,
+      id: `task_${Date.now()}`,
+      taskNo,
+      createdAt: nowStr,
+      updatedAt: nowStr,
+      nodeData: {},
+      logs: [
+        {
+          id: `log_${Date.now()}`,
+          timestamp: nowStr,
+          actor: newTaskData.creatorName,
+          roleName: '运营人员',
+          action: newTaskData.isUrgent ? '创建加急视频需求' : '创建标准视频需求',
+          detail: newTaskData.isUrgent
+            ? `申请加急，进入【待加急审核】队列`
+            : `派发至视频制作人员 ${newTaskData.videoPersonName}`
+        }
+      ]
+    };
+
+    setTasks(prev => [newTask, ...prev]);
+
+    // Update video person workload
+    setVideoPersonnel(prev =>
+      prev.map(p => {
+        if (p.id === newTaskData.videoPersonId) {
+          const newCurrent = p.currentTasks + 1;
+          return {
+            ...p,
+            currentTasks: newCurrent,
+            status: newCurrent >= p.maxTasks ? 'full' : newCurrent >= 11 ? 'busy' : 'idle'
+          };
+        }
+        return p;
+      })
+    );
+  };
+
+  // Node Advancement Handler
+  const handleUpdateTaskNode = (
+    taskId: string,
+    nextNode: NodeStage,
+    updatedNodeData: any,
+    logAction: string
+  ) => {
+    const nowStr = new Date().toISOString().replace('T', ' ').slice(0, 16);
+
+    setTasks(prev =>
+      prev.map(t => {
+        if (t.id === taskId) {
+          const newMainStatus = getMainStatusFromNode(nextNode);
+          const newNodeName =
+            nextNode === 'shooting'
+              ? '拍摄中'
+              : nextNode === 'editing'
+              ? '剪辑中'
+              : nextNode === 'manager_review'
+              ? '负责人终审中'
+              : '流程完结';
+
+          return {
+            ...t,
+            currentNode: nextNode,
+            currentNodeName: newNodeName,
+            mainStatus: newMainStatus,
+            updatedAt: nowStr,
+            nodeData: {
+              ...t.nodeData,
+              ...updatedNodeData
+            },
+            logs: [
+              ...t.logs,
+              {
+                id: `log_${Date.now()}`,
+                timestamp: nowStr,
+                actor: t.videoPersonName,
+                roleName: '视频人员',
+                action: logAction,
+                detail: `节点推至【${newNodeName}】`
+              }
+            ]
+          };
+        }
+        return t;
+      })
+    );
+  };
+
+  // Urgent Approval Handler (Manager)
+  const handleApproveUrgency = (taskId: string, approved: boolean) => {
+    const nowStr = new Date().toISOString().replace('T', ' ').slice(0, 16);
+
+    setTasks(prev =>
+      prev.map(t => {
+        if (t.id === taskId) {
+          return {
+            ...t,
+            isUrgent: approved,
+            urgencyStatus: approved ? 'approved' : 'rejected',
+            currentNode: 'appointment',
+            currentNodeName: '待处理',
+            mainStatus: 'pending',
+            updatedAt: nowStr,
+            logs: [
+              ...t.logs,
+              {
+                id: `log_${Date.now()}`,
+                timestamp: nowStr,
+                actor: '视频负责人',
+                roleName: '视频负责人',
+                action: approved ? '通过加急申请' : '未通过加急申请',
+                detail: approved ? '同意加急，标记置顶优先级' : '不通过加急，转为普通单排队'
+              }
+            ]
+          };
+        }
+        return t;
+      })
+    );
+  };
+
+  // Final Review Handler (Manager)
+  const handleFinalReview = (taskId: string, approved: boolean, notes: string) => {
+    const nowStr = new Date().toISOString().replace('T', ' ').slice(0, 16);
+
+    setTasks(prev =>
+      prev.map(t => {
+        if (t.id === taskId) {
+          const nextNode = approved ? 'finished' : 'editing';
+          const nextNodeName = approved ? '完结' : '退回剪辑修改';
+
+          // Decrement person workload if finished
+          if (approved) {
+            setVideoPersonnel(personnelList =>
+              personnelList.map(p => {
+                if (p.id === t.videoPersonId) {
+                  const newCount = Math.max(0, p.currentTasks - 1);
+                  return {
+                    ...p,
+                    currentTasks: newCount,
+                    status: newCount >= p.maxTasks ? 'full' : newCount >= 11 ? 'busy' : 'idle'
+                  };
+                }
+                return p;
+              })
+            );
+          }
+
+          return {
+            ...t,
+            currentNode: nextNode,
+            currentNodeName: nextNodeName,
+            mainStatus: approved ? 'completed' : 'in_progress',
+            updatedAt: nowStr,
+            nodeData: {
+              ...t.nodeData,
+              managerReviewNotes: notes
+            },
+            logs: [
+              ...t.logs,
+              {
+                id: `log_${Date.now()}`,
+                timestamp: nowStr,
+                actor: '视频负责人',
+                roleName: '视频负责人',
+                action: approved ? '终审通过 (完结)' : '终审退回修改',
+                detail: notes
+              }
+            ]
+          };
+        }
+        return t;
+      })
+    );
+  };
+
+  // Select work or video type from Portfolio and transition to order flow
+  const handleSelectWorkToOrder = (work?: PortfolioItem, videoTypeId?: string) => {
+    if (work) {
+      setReferenceWork(work);
+      setPreselectedVideoTypeId(work.videoTypeId);
+    } else if (videoTypeId) {
+      setPreselectedVideoTypeId(videoTypeId);
+    }
+    setCurrentRole('operator');
+    setCurrentPage('order_create');
+  };
+
+  // Reset Mock Data
+  const handleResetData = () => {
+    setTasks(INITIAL_TASKS);
+    setVideoPersonnel(INITIAL_VIDEO_PERSONNEL);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-100/70 text-slate-800 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
+      {/* Top Bar Header */}
+      <Header
+        currentRole={currentRole}
+        onRoleChange={handleRoleChange}
+        currentPage={currentPage}
+        onNavigate={setCurrentPage}
+        pendingUrgentCount={pendingUrgentCount}
+        pendingManagerReviewCount={pendingManagerReviewCount}
+        pendingVideoCount={pendingVideoCount}
+        onResetData={handleResetData}
+      />
+
+      {/* Role Context Navigation */}
+      <Navigation
+        currentRole={currentRole}
+        currentPage={currentPage}
+        onNavigate={setCurrentPage}
+        pendingUrgentCount={pendingUrgentCount}
+        pendingManagerReviewCount={pendingManagerReviewCount}
+        pendingVideoCount={pendingVideoCount}
+      />
+
+      {/* Main Content Area */}
+      <main className="flex-1">
+        {currentRole === 'operator' && currentPage === 'portfolio' && (
+          <PortfolioView
+            onNavigateToOrderCreate={(videoTypeId?: string) => handleSelectWorkToOrder(undefined, videoTypeId)}
+            onSelectWorkToOrder={handleSelectWorkToOrder}
+          />
+        )}
+
+        {currentRole === 'operator' && currentPage === 'order_create' && (
+          <OrderCreateView
+            videoTypes={videoTypes}
+            videoPersonnel={videoPersonnel}
+            onSubmitTask={handleCreateTask}
+            onNavigateToOrders={() => setCurrentPage('operator_orders')}
+            onOpenPortfolio={() => setCurrentPage('portfolio')}
+            referenceWork={referenceWork}
+            preselectedVideoTypeId={preselectedVideoTypeId}
+            onClearReferenceWork={() => {
+              setReferenceWork(null);
+              setPreselectedVideoTypeId(null);
+            }}
+          />
+        )}
+
+        {currentRole === 'operator' && currentPage === 'operator_orders' && (
+          <OperatorOrdersView
+            tasks={tasks}
+          />
+        )}
+
+        {currentRole === 'video_creator' && (
+          <VideoTasksView
+            tasks={tasks}
+            currentStaffName="张晨"
+            onUpdateTaskNode={handleUpdateTaskNode}
+          />
+        )}
+
+        {currentRole === 'manager' && currentPage === 'manager_approval' && (
+          <ManagerApprovalView
+            tasks={tasks}
+            onApproveUrgency={handleApproveUrgency}
+            onFinalReview={handleFinalReview}
+          />
+        )}
+
+        {currentRole === 'manager' && currentPage === 'manager_overview' && (
+          <ManagerOverviewView
+            tasks={tasks}
+            videoPersonnel={videoPersonnel}
+            videoTypes={videoTypes}
+          />
+        )}
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-slate-900 text-slate-400 py-4 border-t border-slate-800 text-center text-xs">
+        <div className="max-w-7xl mx-auto px-4 flex flex-wrap items-center justify-between gap-2">
+          <span>视频任务管理 V1.0 - 企业内部高保真原型</span>
+          <span className="text-slate-500">支持运营、视频与负责人多角色全流程交互演示</span>
+        </div>
+      </footer>
+    </div>
+  );
 }
-
-function Portfolio({onCreate,onWork}:{onCreate:(typeId?:string,work?:Work)=>void;onWork:(w:Work)=>void}){return <main className="portfolio-root"><section className="portfolio-hero"><div className="hero-motion-layer"><span/><span/><span/></div><video autoPlay muted loop playsInline preload="metadata" poster={imagePool[0]} src="https://videos.pexels.com/video-files/853800/853800-hd_1920_1080_30fps.mp4"/><div className="hero-tint"/><div className="portfolio-topbar"><b><span>V</span> VIDEO LAB</b><div><a href="#work">精选作品</a><a href="#services">服务与价格</a><a href="#team">制作团队</a></div></div><div className="hero-copy"><small>VIDEO TEAM · SELECTED WORKS 2026</small><h1>让产品，<br/><em>被真正看见。</em></h1><p>探索实拍、安装、AI视觉与精品创意，找到适合产品的视觉方向。</p><button onClick={()=>onCreate()}>创建视频需求 <ArrowRight size={17}/></button></div><div className="scroll-cue">SCROLL TO EXPLORE <span>↓</span></div></section>
-  <section className="portfolio-content" id="work"><div className="section-kicker">SELECTED WORKS</div><h2>按视频类型探索作品</h2><p className="section-lead">Hero 负责第一印象，代表作品保持静态、克制，让内容本身成为主角。</p><div className="type-jump">{videoTypes.map(t=><a key={t.id} href={`#type-${t.id}`}>{t.name.replace('产品','')}</a>)}</div>{videoTypes.map((t,idx)=><section className="type-section" id={`type-${t.id}`} key={t.id}><div className="type-heading"><div><span>0{idx+1}</span><small>{['LIVE ACTION','INSTALLATION','AI PRODUCT FILM','AI CAMPAIGN','EDITING & MOTION'][idx]}</small><h3>{t.name}</h3><p>{t.short}</p></div><button onClick={()=>onCreate(t.id)}>创建此类型视频需求 <ArrowRight size={15}/></button></div><div className="work-grid">{works.filter(w=>w.typeId===t.id).map(w=><article className="work-card" key={w.id} onClick={()=>onWork(w)}><div className="work-media"><img src={w.image} alt={w.title}/><div className="work-overlay"><span><Play size={15} fill="currentColor"/> PLAY</span></div><b className="duration">{w.duration}</b></div><h4>{w.title}</h4><p>{w.product}</p></article>)}</div></section>)}</section>
-  <section className="dark-section" id="services"><div className="section-kicker">SERVICES</div><h2>视频方案与内部参考</h2><div className="service-grid">{services.map((s,i)=><article key={s[0]}><span>0{i+1}</span><h3>{s[0]}</h3><p>{s[1]}</p><b>{s[2]}</b><button onClick={()=>onCreate(videoTypes[i]?.id)}>创建需求 →</button></article>)}</div></section>
-  <section className="light-section"><div className="section-kicker">HOW TO CHOOSE</div><h2>快速选型指南</h2><div className="guide-grid">{videoTypes.map((t,i)=><button key={t.id} onClick={()=>onCreate(t.id)}><span>{t.icon}</span><div><b>{['需要真实呈现材质与体验','需要完整安装与操作流程','没有样品，需要场景化表达','重点产品，需要更强创意表达','已有素材，只需要后期制作'][i]}</b><small>推荐：{t.name}</small></div><ArrowRight size={16}/></button>)}</div></section>
-  <section className="dark-section" id="team"><div className="section-kicker">CREATORS</div><h2>制作团队</h2><div className="creator-grid">{creators.map(c=><article key={c.id}><img src={c.avatar}/><div><h3>{c.name}</h3><p>{c.specialty}</p><span className={`creator-status ${c.status}`}>{c.status}</span></div></article>)}</div></section><section className="portfolio-final"><p>READY TO MAKE YOUR PRODUCT MOVE?</p><h2>找到适合产品的视觉方向了吗？</h2><button onClick={()=>onCreate()}>创建视频需求 <ArrowRight size={17}/></button></section></main>}
-
-function WorkModal({work,onClose,onCreate}:{work:Work;onClose:()=>void;onCreate:()=>void}){const type=videoTypes.find(t=>t.id===work.typeId);return <div className="modal-backdrop" onMouseDown={onClose}><div className="work-modal" onMouseDown={e=>e.stopPropagation()}><button className="close" onClick={onClose}><X/></button><img src={work.image}/><div className="work-modal-body"><small>{type?.name}</small><h2>{work.title}</h2><p>{work.product} · {work.duration}</p><p>{work.description}</p><button onClick={onCreate}>参考此作品创建需求 <ArrowRight size={16}/></button></div></div></div>}
-
-function CreateRequest({initialType,referenceWork,onOpenPortfolio,onSubmit}:{initialType:string;referenceWork:Work|null;onOpenPortfolio:()=>void;onSubmit:(t:Task)=>void}){const [typeId,setTypeId]=useState(initialType);const [sku,setSku]=useState('');const [selectedProduct,setSelectedProduct]=useState<{sku:string;name:string;category:string;image:string}|null>(null);const [style,setStyle]=useState('simple');const [ratio,setRatio]=useState('16:9');const [duration,setDuration]=useState('<30s');const [urgent,setUrgent]=useState(false);const [creatorId,setCreatorId]=useState('');const [sample,setSample]=useState('arrived');const [needsPerson,setNeedsPerson]=useState(false);const [remarks,setRemarks]=useState(referenceWork?`参考作品：${referenceWork.title}`:'');const product={sku:'HUAWEI123',name:'Huawei Outdoor Smart Canopy',category:'户外家具 / 遮阳篷',image:imagePool[0]};const pickStyle=(v:string)=>{setStyle(v);if(v==='simple'){setRatio('16:9');setDuration('<30s')}if(v==='ai'){setRatio('9:16');setDuration('<30s')}if(v==='refined'){setRatio('16:9');setDuration('<60s')}};const submit=()=>{if(!typeId||!selectedProduct||!creatorId)return alert('请先完成视频类型、SKU和视频人员选择');const vt=videoTypes.find(v=>v.id===typeId)!;const cr=creators.find(c=>c.id===creatorId)!;onSubmit({id:`t-${Date.now()}`,no:`VTD-${new Date().toISOString().slice(0,10).replaceAll('-','')}-${String(Date.now()).slice(-3)}`,sku:selectedProduct.sku,product:selectedProduct.name,typeId,typeName:vt.name,creatorId,creatorName:cr.name,urgent,urgentStatus:urgent?'待审核':undefined,status:'待处理',createdAt:new Date().toLocaleString('zh-CN',{hour12:false}),updatedAt:new Date().toLocaleString('zh-CN',{hour12:false}),remarks})};return <main className="business-page"><div className="page-title"><div><span>CREATE VIDEO REQUEST</span><h1>创建视频需求</h1><p>选择视频类型并填写产品与制作要求，最后选择视频人员即可提交。</p></div><button className="secondary" onClick={onOpenPortfolio}>查看作品集</button></div><section className="panel"><div className="step-title"><b>1</b><div><h2>选择视频类型</h2><p>整个卡片可点击，保持高信息密度。</p></div></div><div className="type-card-grid">{videoTypes.map((t,i)=><button className={typeId===t.id?'selected':''} key={t.id} onClick={()=>setTypeId(t.id)}><span>0{i+1}</span><i>{t.icon}</i><h3>{t.name}</h3><p>{t.short}</p>{typeId===t.id&&<b className="selected-mark"><Check size={13}/> 已选择</b>}</button>)}</div></section>{typeId&&<section className="panel"><div className="step-title"><b>2</b><div><h2>填写需求并选择视频人员</h2><p>提交前不再增加二次确认页。</p></div></div><div className="form-grid"><label className="field full"><span>产品SKU / 货号</span><div className="search-input"><Search size={16}/><input value={sku} onChange={e=>{setSku(e.target.value);setSelectedProduct(null)}} placeholder="输入 HUAWEI123 查看联想"/></div>{sku.toUpperCase().includes('HUAWEI')&&!selectedProduct&&<button className="suggestion" onClick={()=>{setSku(product.sku);setSelectedProduct(product)}}><img src={product.image}/><div><b>{product.sku}</b><small>{product.name}</small></div></button>}</label>{selectedProduct&&<div className="product-preview full"><img src={selectedProduct.image}/><div><b>{selectedProduct.name}</b><span>{selectedProduct.category}</span><small>SKU：{selectedProduct.sku}</small></div></div>}<label className="field full"><span>Amazon 产品参考链接</span><input placeholder="https://www.amazon.com/..."/></label><div className="field full"><span>制作风格</span><div className="segmented">{[['simple','简单视频风格'],['ai','AI设计'],['refined','精细化设计']].map(([v,l])=><button className={style===v?'active':''} onClick={()=>pickStyle(v)} key={v}>{l}</button>)}</div></div><div className="field"><span>视频比例</span><div className="segmented">{['16:9','9:16','1:1'].map(v=><button key={v} className={ratio===v?'active':''} onClick={()=>setRatio(v)}>{v}</button>)}</div></div><div className="field"><span>视频时长</span><div className="segmented">{['<30s','<60s'].map(v=><button key={v} className={duration===v?'active':''} onClick={()=>setDuration(v)}>{v}</button>)}</div></div><div className="field"><span>是否需要模特出镜</span><div className="segmented"><button className={!needsPerson?'active':''} onClick={()=>setNeedsPerson(false)}>不需要</button><button className={needsPerson?'active':''} onClick={()=>setNeedsPerson(true)}>需要</button></div></div><div className="field"><span>样品状态</span><select value={sample} onChange={e=>setSample(e.target.value)}><option value="arrived">已到样</option><option value="onway">未到样</option><option value="none">无需样品</option></select></div><label className="field full"><span>备注与参考内容</span><textarea rows={4} value={remarks} onChange={e=>setRemarks(e.target.value)} placeholder="描述希望的视频风格、重点要求，或粘贴参考视频/共享链接"/></label><div className="field full"><span>选择视频人员</span><div className="creator-select-list">{creators.map(c=><button disabled={c.status==='满载'} className={creatorId===c.id?'selected':''} onClick={()=>setCreatorId(c.id)} key={c.id}><img src={c.avatar}/><div><b>{c.name}</b><small>{c.specialty}</small></div><span className={`creator-status ${c.status}`}>{c.status}</span><em>{c.estimated}</em>{c.status==='满载'?<small>不可选择</small>:creatorId===c.id?<Check size={17}/>:null}</button>)}</div></div><label className="urgent-row full"><input type="checkbox" checked={urgent} onChange={e=>setUrgent(e.target.checked)}/><Zap size={16}/> 是否加急{urgent&&<small>加急费用预估上涨20%，望知悉。</small>}</label></div><div className="submit-row"><button onClick={submit}>确认并提交视频需求 <ArrowRight size={16}/></button></div></section>}</main>}
-
-function Orders({tasks}:{tasks:Task[]}){return <main className="business-page"><div className="page-title"><div><span>MY ORDERS</span><h1>我的视频订单</h1><p>查看提交后的当前节点与制作进度。</p></div></div><TaskTable tasks={tasks}/></main>}
-function CreatorTasks({tasks,setTasks}:{tasks:Task[];setTasks:React.Dispatch<React.SetStateAction<Task[]>>}){const [filter,setFilter]=useState<'待处理'|'制作中'|'负责人终审中'|'已完成任务'>('待处理');const visible=useMemo(()=>tasks.filter(t=>filter==='待处理'?t.status==='待处理':filter==='制作中'?['拍摄中','剪辑中'].includes(t.status):filter==='负责人终审中'?t.status==='负责人终审中':t.status==='已完成').sort((a,b)=>Number(b.urgent)-Number(a.urgent)||a.createdAt.localeCompare(b.createdAt)),[tasks,filter]);const advance=(id:string)=>setTasks(v=>v.map(t=>t.id!==id?t:{...t,status:t.status==='待处理'?(videoTypes.find(x=>x.id===t.typeId)?.needsShoot?'拍摄中':'剪辑中'):t.status==='拍摄中'?'剪辑中':t.status==='剪辑中'?'负责人终审中':'已完成',updatedAt:new Date().toLocaleString('zh-CN',{hour12:false})}));return <main className="business-page"><div className="page-title creator-title"><div><span>VIDEO CREATOR</span><h1>我的视频任务待办</h1><p>加急任务默认置顶，同优先级按进入时间正序处理。</p></div><div className="status-tabs">{(['待处理','制作中','负责人终审中','已完成任务'] as const).map(f=><button key={f} className={filter===f?'active':''} onClick={()=>setFilter(f)}>{f}</button>)}</div></div><div className="table-wrap"><table><thead><tr><th>优先级</th><th>任务单号</th><th>产品</th><th>视频类型</th><th>当前节点</th><th>创建时间</th><th>操作</th></tr></thead><tbody>{visible.map(t=><tr key={t.id}><td>{t.urgent?<span className="urgent-tag"><Zap size={12}/> 加急</span>:<span>普通</span>}</td><td><b>{t.no}</b></td><td>{t.sku}<small>{t.product}</small></td><td>{t.typeName}</td><td><Status value={t.status}/></td><td>{t.createdAt}</td><td>{t.status!=='已完成'&&<button className="table-action" onClick={()=>advance(t.id)}>完成当前节点</button>}</td></tr>)}</tbody></table></div></main>}
-function ManagerTasks({tasks,setTasks}:{tasks:Task[];setTasks:React.Dispatch<React.SetStateAction<Task[]>>}){const [filter,setFilter]=useState<'全部'|'加急审核'|'负责人终审'|'已处理'>('全部');const visible=tasks.filter(t=>filter==='全部'?((t.urgentStatus==='待审核')||t.status==='负责人终审中'):filter==='加急审核'?t.urgentStatus==='待审核':filter==='负责人终审'?t.status==='负责人终审中':(t.urgentStatus==='已通过'||t.urgentStatus==='未通过'||t.status==='已完成'));const urgent=(id:string,ok:boolean)=>setTasks(v=>v.map(t=>t.id!==id?t:{...t,urgent:ok,urgentStatus:ok?'已通过':'未通过',updatedAt:new Date().toLocaleString('zh-CN',{hour12:false})}));const review=(id:string,ok:boolean)=>setTasks(v=>v.map(t=>t.id!==id?t:{...t,status:ok?'已完成':'剪辑中',updatedAt:new Date().toLocaleString('zh-CN',{hour12:false})}));return <main className="business-page"><div className="page-title creator-title"><div><span>MANAGER</span><h1>视频负责人待办</h1><p>集中处理加急审核与负责人终审。</p></div><div className="status-tabs">{(['全部','加急审核','负责人终审','已处理'] as const).map(f=><button key={f} className={filter===f?'active':''} onClick={()=>setFilter(f)}>{f}</button>)}</div></div><div className="table-wrap"><table><thead><tr><th>任务单号</th><th>产品</th><th>类型</th><th>视频人员</th><th>待办类型</th><th>时间</th><th>操作</th></tr></thead><tbody>{visible.map(t=><tr key={t.id}><td><b>{t.no}</b></td><td>{t.sku}<small>{t.product}</small></td><td>{t.typeName}</td><td>{t.creatorName}</td><td>{t.urgentStatus==='待审核'?<span className="urgent-tag">加急审核</span>:t.status==='负责人终审中'?<Status value={t.status}/>:<span>已处理</span>}</td><td>{t.updatedAt}</td><td>{t.urgentStatus==='待审核'?<div className="row-actions"><button onClick={()=>urgent(t.id,true)}>通过</button><button className="ghost" onClick={()=>urgent(t.id,false)}>不通过</button></div>:t.status==='负责人终审中'?<div className="row-actions"><button onClick={()=>review(t.id,true)}>终审通过</button><button className="ghost" onClick={()=>review(t.id,false)}>退回修改</button></div>:null}</td></tr>)}</tbody></table></div></main>}
-function Overview({tasks}:{tasks:Task[]}){const counts={all:tasks.length,pending:tasks.filter(t=>t.status==='待处理').length,doing:tasks.filter(t=>['拍摄中','剪辑中'].includes(t.status)).length,review:tasks.filter(t=>t.status==='负责人终审中').length,done:tasks.filter(t=>t.status==='已完成').length};return <main className="business-page"><div className="page-title"><div><span>OVERVIEW</span><h1>视频任务总览与监控</h1><p>通过状态与当前节点理解任务进展，不使用百分比进度。</p></div></div><div className="stat-grid">{[['全部任务',counts.all],['待处理',counts.pending],['制作中',counts.doing],['终审中',counts.review],['已完成',counts.done]].map(([l,v])=><article key={String(l)}><span>{l}</span><b>{v}</b></article>)}</div><TaskTable tasks={tasks}/></main>}
-function TaskTable({tasks}:{tasks:Task[]}){return <div className="table-wrap"><table><thead><tr><th>任务单号</th><th>SKU / 产品</th><th>视频类型</th><th>视频人员</th><th>加急</th><th>当前状态</th><th>提交/更新</th></tr></thead><tbody>{tasks.map(t=><tr key={t.id}><td><b>{t.no}</b></td><td>{t.sku}<small>{t.product}</small></td><td>{t.typeName}</td><td>{t.creatorName}</td><td>{t.urgent?<span className="urgent-tag"><Zap size={12}/> 加急</span>:<span>-</span>}</td><td><Status value={t.status}/>{t.urgent&&t.status==='待处理'&&<small>加急排期中</small>}{t.urgent&&['拍摄中','剪辑中'].includes(t.status)&&<small>已进入加急制作，预计1周内完成</small>}</td><td>{t.createdAt}<small>{t.updatedAt}</small></td></tr>)}</tbody></table></div>}
-function Status({value}:{value:TaskStatus}){return <span className={`status status-${value}`}>{value}</span>}
-export default App;

@@ -1,9 +1,20 @@
-# 视频任务管理 V1.0
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
+</div>
 
-视频任务管理与作品集原型项目。
+# Run and deploy your AI Studio app
 
-- 运营：作品集 / 创建视频需求 / 我的视频订单
-- 视频人员：任务待办
-- 视频负责人：审核与任务总览
+This contains everything you need to run your app locally.
 
-项目已包含作品集 Hero、静态代表作品、视频类型展示及现有业务流程。
+View your app in AI Studio: https://ai.studio/apps/249d715f-1674-4a30-abe2-2363279abd18
+
+## Run Locally
+
+**Prerequisites:**  Node.js
+
+
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`
