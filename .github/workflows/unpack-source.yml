@@ -1,0 +1,32 @@
+name: Unpack source bundle
+
+on:
+  push:
+    branches: [portfolio-codex-merge]
+
+permissions:
+  contents: write
+
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack merged prototype source
+        shell: bash
+        run: |
+          if [ ! -f source_bundle.zip ]; then
+            echo "No source bundle to unpack."
+            exit 0
+          fi
+          unzip -o source_bundle.zip
+          rm source_bundle.zip
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes."
+            exit 0
+          fi
+          git commit -m "Merge Codex portfolio into video task management"
+          git push origin HEAD:portfolio-codex-merge
