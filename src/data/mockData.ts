@@ -13,7 +13,7 @@ export const INITIAL_VIDEO_PERSONNEL: VideoPersonnel[] = [
   {
     id: 'vp_zhangchen',
     name: '张晨',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+    avatar: 'https://api.dicebear.com/10.x/notionists/svg?seed=Kai&backgroundColor=cfff20',
     specialty: '产品实拍 / 安装 / 专项拍摄',
     supportedTypeIds: ['live_showcase', 'installation', 'custom'],
     currentTasks: 3,
@@ -24,7 +24,7 @@ export const INITIAL_VIDEO_PERSONNEL: VideoPersonnel[] = [
   {
     id: 'vp_lihao',
     name: '李浩',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+    avatar: 'https://api.dicebear.com/10.x/notionists/svg?seed=Mia&backgroundColor=dbe8ff',
     specialty: '实拍 / UGC / 剪辑',
     supportedTypeIds: ['live_showcase', 'ugc', 'editing'],
     currentTasks: 8,
@@ -35,7 +35,7 @@ export const INITIAL_VIDEO_PERSONNEL: VideoPersonnel[] = [
   {
     id: 'vp_wangmin',
     name: '王敏',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
+    avatar: 'https://api.dicebear.com/10.x/notionists/svg?seed=Leo&backgroundColor=ffd8cd',
     specialty: 'AI 展示 / UGC / 精品广告',
     supportedTypeIds: ['ai_showcase', 'ugc', 'ai_premium'],
     currentTasks: 14,
@@ -46,7 +46,7 @@ export const INITIAL_VIDEO_PERSONNEL: VideoPersonnel[] = [
   {
     id: 'vp_chenkai',
     name: '陈凯',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
+    avatar: 'https://api.dicebear.com/10.x/notionists/svg?seed=Nina&backgroundColor=cfff20',
     specialty: '产品实拍 / 安装 / 剪辑',
     supportedTypeIds: ['live_showcase', 'installation', 'editing'],
     currentTasks: 18,
@@ -57,7 +57,7 @@ export const INITIAL_VIDEO_PERSONNEL: VideoPersonnel[] = [
   {
     id: 'vp_zhouyu',
     name: '周宇',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=80',
+    avatar: 'https://api.dicebear.com/10.x/notionists/svg?seed=Ray&backgroundColor=ffd8cd',
     specialty: 'UGC / 视频剪辑',
     supportedTypeIds: ['ugc', 'editing'],
     currentTasks: 20,
@@ -68,7 +68,7 @@ export const INITIAL_VIDEO_PERSONNEL: VideoPersonnel[] = [
   {
     id: 'vp_zhaoqi',
     name: '赵琪',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
+    avatar: 'https://api.dicebear.com/10.x/notionists/svg?seed=Eve&backgroundColor=cfff20',
     specialty: '数码实拍 / UGC / 精品广告',
     supportedTypeIds: ['live_showcase', 'ugc', 'ai_premium'],
     currentTasks: 3,
@@ -79,7 +79,7 @@ export const INITIAL_VIDEO_PERSONNEL: VideoPersonnel[] = [
   {
     id: 'vp_liuwei',
     name: '刘伟',
-    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=200&q=80',
+    avatar: 'https://api.dicebear.com/10.x/notionists/svg?seed=Yu&backgroundColor=dbe8ff',
     specialty: 'AI 展示 / 安装 / 精品广告',
     supportedTypeIds: ['ai_showcase', 'installation', 'ai_premium'],
     currentTasks: 11,
@@ -90,7 +90,7 @@ export const INITIAL_VIDEO_PERSONNEL: VideoPersonnel[] = [
   {
     id: 'vp_sunyue',
     name: '孙悦',
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
+    avatar: 'https://api.dicebear.com/10.x/notionists/svg?seed=Lin&backgroundColor=ffd8cd',
     specialty: 'AI 展示 / UGC / 混剪',
     supportedTypeIds: ['ai_showcase', 'ugc', 'editing'],
     currentTasks: 7,
