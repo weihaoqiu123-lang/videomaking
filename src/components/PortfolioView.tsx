@@ -1,522 +1,313 @@
-import React, { useState, useRef } from 'react';
-import { motion } from 'motion/react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
-  portfolioCategories,
-  serviceTypes,
-  selectionGuide,
-  specialService,
-  members,
-  testimonials
+  ArrowRight,
+  BarChart3,
+  Clock3,
+  ExternalLink,
+  Play,
+  Sparkles,
+  X,
+} from 'lucide-react';
+import type { ServiceId, ServiceTierId } from '../data/serviceCatalog';
+import { SERVICE_CATALOG } from '../data/serviceCatalog';
+import {
+  findPortfolioWork,
+  portfolioMembers,
+  portfolioSections,
+  popularWorks,
+  type PortfolioItem,
 } from '../data/portfolioData';
 
 interface PortfolioViewProps {
-  onNavigateToOrderCreate: (videoTypeId?: string) => void;
-  onSelectWorkToOrder: (work: any, videoTypeId?: string) => void;
-  onSelectCreatorToOrder?: (creatorId: string) => void;
+  onNavigateToOrderCreate: (videoTypeId?: ServiceId) => void;
+  onSelectWorkToOrder?: (work?: PortfolioItem, videoTypeId?: ServiceId) => void;
 }
 
-export const PortfolioView: React.FC<PortfolioViewProps> = ({
-  onNavigateToOrderCreate,
-  onSelectWorkToOrder,
-  onSelectCreatorToOrder,
-}) => {
-  const [activeWorkModal, setActiveWorkModal] = useState<any | null>(null);
-  const railRef = useRef<HTMLDivElement | null>(null);
+const WorkCard: React.FC<{
+  work: PortfolioItem;
+  onOpen: (work: PortfolioItem) => void;
+  vertical?: boolean;
+}> = ({ work, onOpen, vertical }) => (
+  <button
+    type="button"
+    className={`pv2-work-card ${vertical ? 'pv2-work-card-vertical' : ''}`}
+    onClick={() => onOpen(work)}
+    aria-label={`播放 ${work.title}`}
+  >
+    <span className="pv2-work-media">
+      <img src={work.image} alt={work.productName} loading="lazy" />
+      <span className="pv2-play"><Play size={17} fill="currentColor" /></span>
+    </span>
+    <span className="pv2-work-copy">
+      <span>
+        <strong>{work.title}</strong>
+        <small>{work.productName}</small>
+      </span>
+      <span className="pv2-work-meta">
+        {work.tierName && <b>{work.tierName}</b>}
+        <small>{work.creatorName} / {work.duration}</small>
+      </span>
+    </span>
+  </button>
+);
 
-  const scrollRail = (direction: 'left' | 'right') => {
-    if (railRef.current) {
-      const scrollAmount = direction === 'left' ? -360 : 360;
-      railRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    }
+const WorkModal: React.FC<{
+  work: PortfolioItem | null;
+  onClose: () => void;
+}> = ({ work, onClose }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (!work) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      }
+    };
+  }, [work, onClose]);
+
+  return (
+    <AnimatePresence>
+      {work && (
+        <motion.div
+          className="pv2-modal-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onMouseDown={(event) => {
+            if (event.currentTarget === event.target) onClose();
+          }}
+        >
+          <motion.div
+            className="pv2-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="pv2-modal-title"
+            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.99 }}
+            transition={{ duration: 0.22 }}
+          >
+            <button type="button" className="pv2-modal-close" onClick={onClose} aria-label="关闭作品预览">
+              <X size={20} />
+            </button>
+            <div className={`pv2-modal-media ${work.aspectRatio === '9:16' ? 'is-vertical' : ''}`}>
+              {work.videoUrl ? (
+                <video ref={videoRef} src={work.videoUrl} controls autoPlay playsInline poster={work.image} />
+              ) : (
+                <>
+                  <img src={work.image} alt={work.productName} />
+                  <span className="pv2-media-pending">完整视频待补充</span>
+                </>
+              )}
+            </div>
+            <div className="pv2-modal-content">
+              <span className="pv2-modal-type">{work.videoTypeName}</span>
+              <h3 id="pv2-modal-title">{work.title}</h3>
+              <p>{work.description}</p>
+              <dl>
+                <div><dt>档位</dt><dd>{work.tierName || '标准服务'}</dd></div>
+                <div><dt>制作人</dt><dd>{work.creatorName}</dd></div>
+                <div><dt>时长</dt><dd>{work.duration}</dd></div>
+              </dl>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+export const PortfolioView: React.FC<PortfolioViewProps> = ({ onNavigateToOrderCreate }) => {
+  const reduceMotion = useReducedMotion();
+  const [activeWork, setActiveWork] = useState<PortfolioItem | null>(null);
+  const [activeAiTier, setActiveAiTier] = useState<ServiceTierId>('standard');
+
+  const aiWorks = useMemo(() => {
+    const aiSection = portfolioSections.find((section) => section.serviceId === 'ai_showcase');
+    return aiSection?.tiers?.find((tier) => tier.id === activeAiTier)?.works || [];
+  }, [activeAiTier]);
+
+  const reveal = reduceMotion
+    ? {}
+    : { initial: { opacity: 0, y: 24 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, amount: 0.16 } };
+
+  const openMemberWork = (workId: string) => {
+    const selected = findPortfolioWork(workId);
+    if (selected) setActiveWork(selected);
   };
 
   return (
-    <div className="portfolio-root">
-      
-      {/* ======================================================== */}
-      {/* 01. HERO SECTION (Codex Spatial Visual) */}
-      {/* ======================================================== */}
-      <section className="hero" id="hero">
-        <div className="hero-media" aria-hidden="true">
-          <div className="hero-visual">
-            <div className="hero-orb hero-orb-a" />
-            <div className="hero-orb hero-orb-b" />
-            <div className="hero-beam hero-beam-a" />
-            <div className="hero-beam hero-beam-b" />
-            <div className="hero-prism">
-              <span className="hero-prism-face hero-prism-face-a" />
-              <span className="hero-prism-face hero-prism-face-b" />
-              <span className="hero-prism-core" />
-            </div>
-            <div className="hero-grid" />
-            <div className="hero-grain" />
-          </div>
-          <div className="hero-media-tint" />
+    <div className="portfolio-shell-v2">
+      <section className="pv2-hero" aria-labelledby="pv2-hero-title">
+        <div className="pv2-hero-orbit" aria-hidden="true">
+          <span className="pv2-orbit-disc" />
+          <span className="pv2-orbit-frame" />
+          <span className="pv2-orbit-glow" />
         </div>
-
-        {/* HERO COPY */}
-        <div className="hero-copy">
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="eyebrow"
-          >
-            <span />
-            VIDEO CREATIVE DEPARTMENT · 2026
-          </motion.p>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1 }}
-          >
-            让产品，<br />
-            <em>被真正看见。</em>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="hero-intro"
-          >
-            浏览视频组代表作品与不同视频方案，找到适合产品的视觉方向并直接发起视频需求。
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="hero-actions"
-          >
-            <button
-              onClick={() => onNavigateToOrderCreate()}
-              className="primary-button"
-            >
-              <span>创建视频需求</span>
-              <span>↗</span>
+        <motion.div
+          className="pv2-hero-copy"
+          initial={reduceMotion ? false : { opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.65 }}
+        >
+          <span className="pv2-brand-line"><Sparkles size={15} /> HOOYA VIDEO</span>
+          <h1 id="pv2-hero-title">HOOYA<br />视频制作服务页</h1>
+          <p>欢迎各位同事。这里汇总视频组近期优秀作品、服务类型和制作排期，确认需求后即可进入下单。</p>
+          <div className="pv2-hero-actions">
+            <button type="button" className="pv2-button pv2-button-primary" onClick={() => document.getElementById('portfolio-work')?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' })}>
+              查看作品 <ArrowRight size={16} />
             </button>
-          </motion.div>
-        </div>
-
-        {/* SCROLL CUE */}
-        <div className="scroll-cue">
-          <span>SCROLL TO EXPLORE</span>
-          <i />
-        </div>
-
-      </section>
-
-      {/* ======================================================== */}
-      {/* 02. SELECTED WORKS PORTFOLIO GRID (Static 1200px Grid) */}
-      {/* ======================================================== */}
-      <section className="work-section" id="work">
-        <div className="work-container">
-          {/* SECTION HEADER */}
-          <div className="work-header">
-            <div className="section-topline">
-              <p><span>✦</span> SELECTED WORKS</p>
-              <p>REPRESENTATIVE PORTFOLIO</p>
-            </div>
-
-            <div className="work-heading-row">
-              <h2>代表作品 <span>15</span></h2>
-              <p className="work-subdesc">
-                按视频类型探索代表性作品，直观参考不同制作风格与视觉效果。点击预览成片，可直接参考发单。
-              </p>
-            </div>
+            <button type="button" className="pv2-button pv2-button-ghost" onClick={() => onNavigateToOrderCreate()}>
+              进入下单系统 <ExternalLink size={15} />
+            </button>
           </div>
-
-          {/* CATEGORY SECTIONS (STATIC GRID) */}
-          <div className="portfolio-types">
-            {portfolioCategories.map((cat) => (
-              <article key={cat.id} className="portfolio-category" id={`cat-${cat.id}`}>
-                {/* CATEGORY HEADER */}
-                <div className="category-header">
-                  <div className="category-title-block">
-                    <span className="category-num">{cat.index}</span>
-                    <div>
-                      <h3>{cat.title}</h3>
-                      <p className="category-desc">{cat.intro}</p>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => onNavigateToOrderCreate(cat.videoTypeId)}
-                    className="category-order-btn"
-                  >
-                    <span>创建此类型视频需求</span>
-                    <span className="arrow">↗</span>
-                  </button>
-                </div>
-
-                {/* 3-COLUMN STATIC GRID */}
-                <div className="work-grid">
-                  {cat.works.map((work) => (
-                    <div
-                      key={work.id}
-                      className="work-card"
-                    >
-                      {/* COVER IMAGE WITH 4:3 ASPECT RATIO */}
-                      <div
-                        className="work-cover-wrap"
-                        onClick={() => setActiveWorkModal(work)}
-                      >
-                        <img src={work.image} alt={work.title} loading="lazy" />
-                        <div className="work-overlay">
-                          <div className="play-badge">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                              <polygon points="5,3 19,12 5,21" />
-                            </svg>
-                            <span>PREVIEW</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* TEXT BELOW COVER */}
-                      <div className="work-info">
-                        <div className="work-info-main" onClick={() => setActiveWorkModal(work)}>
-                          <h4 className="work-title">{work.productName}</h4>
-                          <p className="work-sub">{cat.title} · {work.meta.split('·')[1]?.trim() || work.meta}</p>
-                        </div>
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onSelectWorkToOrder(work, cat.videoTypeId);
-                          }}
-                          className="work-ref-action"
-                          title="参考此作品创建需求"
-                        >
-                          <span>参考此作品</span>
-                          <span className="arrow">↗</span>
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </article>
-            ))}
-          </div>
+        </motion.div>
+        <div className="pv2-hero-index" aria-hidden="true">
+          <span>作品</span><strong>24</strong>
+          <span>服务</span><strong>7</strong>
         </div>
       </section>
 
-      {/* ======================================================== */}
-      {/* 04. SERVICES & PRICES SECTION */}
-      {/* ======================================================== */}
-      <section className="services" id="services">
-        <div className="section-topline light-line">
-          <p><span>✦</span> 02 视频方案与价格</p>
-          <p>INTERNAL REFERENCE ONLY</p>
+      <motion.section className="pv2-popular pv2-section" {...reveal}>
+        <div className="pv2-section-heading">
+          <h2>近期热门视频</h2>
+          <p>用最近 30 天的播放与销售表现，帮助运营快速找到值得参考的方向。</p>
+        </div>
+        <div className="pv2-popular-grid">
+          {popularWorks.map((work, index) => (
+            <button key={work.id} type="button" className={`pv2-popular-card pv2-popular-card-${index + 1}`} onClick={() => setActiveWork(work)}>
+              <img src={work.image} alt={work.productName} />
+              <span className="pv2-popular-shade" />
+              <span className="pv2-popular-copy">
+                <span><b>{work.title}</b><small>{work.videoTypeName} / {work.creatorName}</small></span>
+                <span className="pv2-metric"><strong>{work.metric.value}</strong><b>{work.metric.label}</b><small>{work.metric.period} / 演示数据</small></span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </motion.section>
+
+      <section className="pv2-work pv2-section" id="portfolio-work">
+        <div className="pv2-section-heading">
+          <h2>按服务类型查看作品</h2>
+          <p>点击作品可查看完整信息。正式视频素材到位后，静态封面会直接替换为播放器。</p>
         </div>
 
-        <div className="service-layout">
-          {/* SIDEBAR GUIDE */}
-          <div>
-            <div className="section-title-row">
-              <div>
-                <p>HOW TO CHOOSE</p>
-                <h2>选择合适的<br /><em>视频方案</em></h2>
-                <small>内部结算参考，最终以视频组确认口径为准；下单时无需支付。</small>
-              </div>
-              <span>6 种方向</span>
-            </div>
-
-            <div className="selection-guide">
-              {selectionGuide.map((item, idx) => (
-                <div key={idx} className="guide-item">
-                  <span>{item.situation}</span>
-                  <strong>{item.service} →</strong>
+        {portfolioSections.map((section) => {
+          const displayedWorks = section.serviceId === 'ai_showcase' ? aiWorks : section.works;
+          const isVertical = section.serviceId === 'ugc';
+          return (
+            <motion.article className="pv2-work-section" key={section.serviceId} {...reveal}>
+              <header className="pv2-work-section-head">
+                <div>
+                  <h3>{section.title}</h3>
+                  <p>{section.intro}</p>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* SERVICE LIST */}
-          <div className="service-list">
-            {/* FEATURED: AI DISPLAY */}
-            {serviceTypes.slice(0, 1).map((srv) => (
-              <div key={srv.id} className="service-card service-featured">
-                <div className="service-card-head">
-                  <span className="service-no">01</span>
-                  <div className="service-card-title">
-                    <h3>{srv.name}</h3>
-                    <p>{srv.useFor}</p>
-                    <div className="service-tags">
-                      {srv.tags.map((t, i) => (
-                        <span key={i}>{t}</span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => onNavigateToOrderCreate(srv.videoTypeId)}
-                    className="service-order"
-                  >
-                    <span>创建此类需求</span>
-                    <span>↗</span>
-                  </button>
-                </div>
-
-                <div className="service-tiers tiers-3">
-                  {srv.tiers.map((tier, i) => (
-                    <div key={i} className="service-tier">
-                      <div className="tier-top">
-                        <h4>{tier.name}</h4>
-                        <strong>{tier.price}</strong>
-                      </div>
-                      <p>{tier.bestFor}</p>
-                      <div className="tier-spec">{tier.delivery}</div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="service-card-foot">
-                  <p>{srv.note}</p>
-                  <a href="#work">查看作品示范 ↗</a>
-                </div>
-              </div>
-            ))}
-
-            {/* COMPACT SERVICE GRID */}
-            <div className="compact-service-grid">
-              {serviceTypes.slice(1).map((srv, idx) => (
-                <div key={srv.id} className="compact-service-card">
-                  <header>
-                    <span>0{idx + 2}</span>
-                    <strong>{srv.tiers[0]?.price || '评估后报价'}</strong>
-                  </header>
-
-                  <h3>{srv.name}</h3>
-                  <p>{srv.useFor}</p>
-
-                  <div className="compact-service-tags">
-                    {srv.tags.map((t, i) => (
-                      <span key={i}>{t}</span>
-                    ))}
-                  </div>
-
-                  <footer>
-                    <a href="#work">查看作品示范</a>
-                    <button
-                      onClick={() => onNavigateToOrderCreate(srv.videoTypeId)}
-                      className="compact-order"
-                    >
-                      创建需求 <span>↗</span>
-                    </button>
-                  </footer>
-                </div>
-              ))}
-            </div>
-
-            {/* SPECIAL SERVICE */}
-            <div className="special-service">
-              <div>
-                <span>SPECIAL REQUEST</span>
-                <h3>{specialService.name}</h3>
-                <p>{specialService.useFor}</p>
-              </div>
-
-              <div className="special-service-side">
-                <div className="service-tags">
-                  {specialService.tags.map((t, i) => (
-                    <span key={i}>{t}</span>
-                  ))}
-                </div>
-
-                <button
-                  onClick={() => onNavigateToOrderCreate('vt_01')}
-                >
-                  <span>提交专项需求</span>
-                  <span>↗</span>
+                <button type="button" onClick={() => onNavigateToOrderCreate(section.serviceId)}>
+                  创建此类型视频需求 <ArrowRight size={15} />
                 </button>
+              </header>
+              <div className="pv2-service-meta">
+                <span><Clock3 size={14} /> {section.duration}</span>
+                <span><BarChart3 size={14} /> {section.price}</span>
               </div>
-            </div>
-
-          </div>
-        </div>
-
-        {/* ======================================================== */}
-        {/* 05. TEAM SHOWCASE (10 Member Rail) */}
-        {/* ======================================================== */}
-        <div className="team-showcase" id="team">
-          <div className="team-heading-wide">
-            <div>
-              <p>✦ 03 制作人员与状态</p>
-              <h2>选择制作人，<em>查看当前接单情况</em></h2>
-              <small>所有制作人均可承接常规需求；如需加急或特定风格，请参考当前队列状态。</small>
-            </div>
-
-            <div className="rail-controls">
-              <button onClick={() => scrollRail('left')} title="向左滚动">←</button>
-              <button onClick={() => scrollRail('right')} title="向右滚动">→</button>
-            </div>
-          </div>
-
-          <div className="member-rail" ref={railRef}>
-            {members.map((m, idx) => (
-              <div key={m.id} className="member-tile">
-                <div className="member-profile">
-                  <span className={`availability ${m.tone}`}>
-                    <i />
-                    <span>{m.status}</span>
-                  </span>
-
-                  <img src={m.avatar} alt={m.name} className="member-avatar" />
-                  <span className="member-number">0{idx + 1}</span>
+              {section.tiers && (
+                <div className="pv2-tier-tabs" role="tablist" aria-label="产品 AI 展示视频档位">
+                  {section.tiers.map((tier) => (
+                    <button
+                      type="button"
+                      key={tier.id}
+                      role="tab"
+                      aria-selected={activeAiTier === tier.id}
+                      className={activeAiTier === tier.id ? 'is-active' : ''}
+                      onClick={() => setActiveAiTier(tier.id)}
+                    >
+                      {tier.name}
+                    </button>
+                  ))}
                 </div>
-
-                <div className="member-tile-copy">
-                  <p>{m.role}</p>
-                  <h3>{m.name}</h3>
-
-                  <div className="member-tags">
-                    {m.skills.map((s, i) => (
-                      <span key={i}>{s}</span>
-                    ))}
-                  </div>
-
-                  <div className="queue-row">
-                    <span>当前接单状态</span>
-                    <strong>{m.queue}</strong>
-                  </div>
-
-                  <div className="member-work">
-                    <img src={m.workImage} alt={m.name} />
-                    <span>代表作品示范</span>
-                  </div>
-
-                  <button
-                    disabled={m.tone === 'full'}
-                    onClick={() => {
-                      if (onSelectCreatorToOrder) {
-                        onSelectCreatorToOrder(m.id);
-                      } else {
-                        onNavigateToOrderCreate();
-                      }
-                    }}
-                    className="member-order-btn"
-                  >
-                    {m.tone === 'full' ? '暂不可接单' : '由TA制作 ↗'}
-                  </button>
-                </div>
+              )}
+              <div className={`pv2-work-grid ${isVertical ? 'pv2-work-grid-vertical' : ''}`}>
+                {displayedWorks.map((item) => (
+                  <WorkCard key={item.id} work={item} onOpen={setActiveWork} vertical={isVertical} />
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ======================================================== */}
-        {/* 06. TESTIMONIALS */}
-        {/* ======================================================== */}
-        <div className="feedback-section">
-          <div className="feedback-heading">
-            <p>✦ 04 项目反馈</p>
-            <h2>业务评价 <span>· 示例内容</span></h2>
-          </div>
-
-          <div className="feedback-marquee">
-            <div className="feedback-track">
-              {[...testimonials, ...testimonials].map((t, idx) => (
-                <blockquote key={idx}>
-                  <span>“</span>
-                  <p>{t.quote}</p>
-                  <footer>
-                    <strong>{t.person} · {t.role}</strong>
-                    <small>{t.project}</small>
-                    <i>✦</i>
-                  </footer>
-                </blockquote>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* ======================================================== */}
-        {/* 07. FINAL CTA */}
-        {/* ======================================================== */}
-        <div className="final-cta">
-          <p>✦ CREATE VIDEO REQUEST</p>
-          <h2>让好产品，<em>被更多人看见。</em></h2>
-          <button
-            onClick={() => onNavigateToOrderCreate()}
-            className="primary-button"
-          >
-            <span>创建视频需求</span>
-            <span>↗</span>
-          </button>
-          <p className="footer-note">填写产品基础信息、制作要求并选择制作人员，提交后直接进入视频组制作队列。</p>
-        </div>
-
+            </motion.article>
+          );
+        })}
       </section>
 
-      {/* WORK DETAIL PREVIEW MODAL */}
-      {activeWorkModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-xl p-4 sm:p-6 animate-in fade-in duration-200">
-          <div className="relative bg-[#111514] rounded-2xl border border-white/20 max-w-3xl w-full overflow-hidden shadow-2xl flex flex-col">
-            <div className="px-6 py-4 bg-black/40 border-b border-white/10 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#cfff20] text-black">
-                  {activeWorkModal.videoTypeName || '精选作品'}
-                </span>
-                <h3 className="text-sm font-bold text-white">{activeWorkModal.title}</h3>
-              </div>
-              <button
-                onClick={() => setActiveWorkModal(null)}
-                className="w-8 h-8 rounded-full bg-white/10 text-white hover:bg-rose-600 flex items-center justify-center transition-colors cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div className="relative w-full aspect-16/9 bg-black rounded-xl overflow-hidden border border-white/10">
-                <img
-                  src={activeWorkModal.image || activeWorkModal.thumbnail}
-                  alt={activeWorkModal.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 bg-black/40 p-4 rounded-xl border border-white/10 text-xs">
-                <div>
-                  <span className="text-[10px] text-white/50 block font-mono">制作人员</span>
-                  <p className="text-xs font-bold text-white mt-0.5">{activeWorkModal.creator}</p>
-                </div>
-                <div>
-                  <span className="text-[10px] text-white/50 block font-mono">分类职责</span>
-                  <p className="text-xs font-bold text-white mt-0.5">{activeWorkModal.role}</p>
-                </div>
-                <div>
-                  <span className="text-[10px] text-white/50 block font-mono">规格</span>
-                  <p className="text-xs font-bold text-white mt-0.5">{activeWorkModal.meta}</p>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <span className="text-[10px] font-mono text-[#cfff20]">// 作品说明</span>
-                <p className="text-xs text-white/80 leading-relaxed bg-black/40 p-3 rounded-lg border border-white/10">
-                  {activeWorkModal.description}
-                </p>
-              </div>
-            </div>
-
-            <div className="px-6 py-4 bg-black/60 border-t border-white/10 flex items-center justify-between">
-              <span className="text-xs text-white/50">将带入此作品参数直接跳转至需求创建</span>
-              <button
-                onClick={() => {
-                  onSelectWorkToOrder(activeWorkModal, activeWorkModal.videoTypeId);
-                  setActiveWorkModal(null);
-                }}
-                className="px-5 py-2.5 rounded-full bg-[#cfff20] text-black font-bold text-xs hover:bg-[#dcff63] transition-colors cursor-pointer"
-              >
-                参考此作品创建需求 ↗
-              </button>
-            </div>
-          </div>
+      <motion.section className="pv2-pricing pv2-section" {...reveal}>
+        <div className="pv2-section-heading">
+          <h2>服务与内部结算参考</h2>
+          <p>同一成片用于不同渠道不重复收费。新增画幅、版本或重新制作时按对应服务计费。</p>
         </div>
-      )}
+        <div className="pv2-pricing-list">
+          {SERVICE_CATALOG.filter((service) => !service.customQuote).map((service) => (
+            <article key={service.id}>
+              <span>{service.number}</span>
+              <div><h3>{service.name}</h3><p>{service.summary}</p></div>
+              <div><strong>{service.priceLabel}</strong><small>{service.duration}</small></div>
+              <button type="button" onClick={() => onNavigateToOrderCreate(service.id)} aria-label={`创建${service.name}需求`}><ArrowRight size={17} /></button>
+            </article>
+          ))}
+        </div>
+        <p className="pv2-pricing-note">价格为公司内部结算参考。下单时无需支付，最终以视频组确认为准。</p>
+      </motion.section>
 
+      <motion.section className="pv2-team pv2-section" {...reveal}>
+        <div className="pv2-section-heading">
+          <h2>制作团队与排队状态</h2>
+          <p>状态根据当前任务数自动计算。点击代表作品可查看对应制作方向。</p>
+        </div>
+        <div className="pv2-team-grid">
+          {portfolioMembers.map((member) => {
+            const representative = findPortfolioWork(member.representativeWorkId);
+            return (
+              <article className="pv2-member" key={member.id}>
+                <div className="pv2-member-profile">
+                  <img src={member.avatar} alt={member.name} />
+                  <div><h3>{member.name}</h3><p>{member.specialty}</p></div>
+                  <span className={`pv2-status pv2-status-${member.statusKey}`}>{member.status}</span>
+                </div>
+                <button type="button" className="pv2-member-work" onClick={() => openMemberWork(member.representativeWorkId)}>
+                  <img src={representative?.image} alt={representative?.productName || `${member.name}代表作品`} />
+                  <span><small>代表作品</small><strong>{representative?.title}</strong></span>
+                  <Play size={16} fill="currentColor" />
+                </button>
+                <p className="pv2-member-estimate">{member.estimate}</p>
+              </article>
+            );
+          })}
+        </div>
+      </motion.section>
+
+      <section className="pv2-custom pv2-section">
+        <div>
+          <span>非标准项目</span>
+          <h2>定制 / 专项需求</h2>
+          <p>适用于品牌宣传片、特殊人物拍摄、社媒 how-to 或其他需要单独确认方案的项目。</p>
+        </div>
+        <div>
+          <strong>确认方案后报价</strong>
+          <button type="button" className="pv2-button pv2-button-primary" onClick={() => onNavigateToOrderCreate('custom')}>
+            提交专项需求 <ArrowRight size={16} />
+          </button>
+        </div>
+      </section>
+
+      <WorkModal work={activeWork} onClose={() => setActiveWork(null)} />
     </div>
   );
 };
