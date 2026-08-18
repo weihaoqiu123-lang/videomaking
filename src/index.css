@@ -2175,3 +2175,106 @@ body {
   .portfolio-root .primary-button,
   .portfolio-root .hero-secondary-button { transition: none; }
 }
+
+/* Order page aligned with the IT portfolio visual language */
+.order2-page {
+  --o2-ink: #050707;
+  --o2-muted: #626b65;
+  --o2-line: rgba(5,7,7,.18);
+  --o2-soft: rgba(255,255,255,.36);
+  --o2-lime: #cfff20;
+  width: min(1360px, calc(100% - 48px));
+  padding: 36px 0 92px;
+}
+.order2-intro { min-height: 156px; padding: 30px 36px; border-radius: 24px; background: #111514; }
+.order2-intro::after { right: 12%; width: 360px; height: 220px; background: rgba(207,255,32,.15); }
+.order2-intro h2 { margin-top: 10px; font-size: clamp(24px, 2.2vw, 34px); letter-spacing: -.035em; }
+.order2-intro p { max-width: 620px; line-height: 1.65; }
+.order2-intro > button { padding: 13px 19px; border-radius: 999px; background: var(--o2-lime); }
+.order2-intro > button:active { transform: translateY(1px) scale(.98); }
+.order2-reference { border-radius: 14px; background: #f7f8f4; }
+.order2-reference img { border-radius: 10px; }
+
+.order2-header { grid-template-columns: minmax(360px, .8fr) minmax(640px, 1.25fr); gap: clamp(48px, 6vw, 96px); padding: 66px 4px 38px; }
+.order2-header h1 { margin-top: 14px; font-size: clamp(44px, 5.2vw, 76px); line-height: .92; }
+.order2-header p { margin-top: 12px; max-width: 560px; font-size: 14px; line-height: 1.65; }
+.order2-header li { padding-top: 18px; }
+.order2-header li span { font-size: 12px; }
+
+.order2-layout { grid-template-columns: minmax(0, 1fr) 370px; gap: 28px; }
+.order2-form { gap: 20px; }
+.order2-section { padding: clamp(26px, 3vw, 38px); border-radius: 22px; background: #f8f9f5; box-shadow: none; }
+.order2-section-heading { gap: 16px; margin-bottom: 28px; padding-bottom: 22px; border-bottom-color: rgba(5,7,7,.14); }
+.order2-section-heading > span { width: 34px; height: 34px; color: var(--o2-ink); background: var(--o2-lime); }
+.order2-section-heading h2 { font-size: clamp(20px, 2vw, 28px); letter-spacing: -.035em; }
+.order2-section-heading p { margin-top: 6px; line-height: 1.5; }
+
+.order2-service-grid { gap: 13px; }
+.order2-service-grid > button { min-height: 132px; padding: 18px; border-radius: 16px; }
+.order2-service-grid > button:hover { transform: translateY(-3px); border-color: rgba(82,112,0,.55); }
+.order2-service-grid > button.is-active { border-color: #527000; background: rgba(207,255,32,.2); box-shadow: inset 3px 0 #527000; }
+.order2-service-grid strong { font-size: 15px; }
+.order2-service-grid svg { color: var(--o2-ink); background: var(--o2-lime); }
+.order2-custom-service { margin-top: 13px; padding: 21px 23px; border-radius: 16px; background: #e9ece5; }
+.order2-custom-service.is-active { border-color: #527000; background: rgba(207,255,32,.18); box-shadow: inset 3px 0 #527000; }
+
+.order2-fields { gap: 17px; margin-top: 20px; }
+.order2-field { gap: 9px; font-size: 13px; }
+.order2-field input,
+.order2-field textarea,
+.order2-field select { min-height: 44px; padding: 11px 13px; border-radius: 10px; background: #fff; font-size: 13px; }
+.order2-field textarea { min-height: 108px; }
+.order2-field input:focus,
+.order2-field textarea:focus,
+.order2-field select:focus { border-color: #527000; box-shadow: 0 0 0 3px rgba(207,255,32,.3); }
+.order2-sku-row > button,
+.order2-add-row { border-radius: 10px; }
+.order2-use-block { margin-top: 24px; padding: 20px; border-left: 4px solid #527000; border-radius: 0 14px 14px 0; background: #eef0e9; }
+.order2-use-block button,
+.order2-inline-choices button { padding: 8px 12px; border-radius: 999px; }
+.order2-use-block button.is-active,
+.order2-inline-choices button.is-active { border-color: #527000; background: rgba(207,255,32,.28); box-shadow: none; }
+
+.order2-choice-grid { gap: 13px; }
+.order2-choice { min-height: 104px; padding: 17px; border-radius: 16px; }
+.order2-choice.is-active { border-color: #527000; background: rgba(207,255,32,.2); box-shadow: inset 3px 0 #527000; }
+.order2-note { border-radius: 10px; background: #eef0e9; }
+.order2-counter { padding: 16px 18px; border-radius: 14px; background: #eef0e9; }
+.order2-counter button { width: 32px; height: 32px; border-radius: 50%; }
+
+.order2-person-grid { gap: 13px; }
+.order2-person-grid article { border-radius: 16px; }
+.order2-person-grid article.is-active { border-color: #527000; box-shadow: inset 3px 0 #527000; }
+.order2-person-grid article > button:first-child { padding: 15px; }
+.order2-person-grid img { width: 58px; height: 58px; border-radius: 12px; object-fit: contain; background: #eef0e9; filter: saturate(.9); }
+.order2-person-grid article strong { font-size: 14px; }
+.order2-person-grid article em { padding: 4px 8px; border-radius: 999px; }
+.order2-portfolio-link { padding: 10px; color: #405000; background: #f4f6ef; }
+.order2-urgent { padding: 20px; border-radius: 16px; background: #eef0e9; }
+
+.order2-summary { top: 112px; padding: 29px; border-radius: 22px; color: #f5f7f1; background: #111514; box-shadow: 0 24px 70px rgba(5,7,7,.2); }
+.order2-summary h2 { margin: 13px 0 26px; font-size: 28px; line-height: 1.05; }
+.order2-summary dl div { padding: 12px 0; border-top-color: rgba(245,247,241,.16); }
+.order2-price { padding: 21px 0; }
+.order2-price > strong { margin-top: 6px; color: var(--o2-lime); font-size: 36px; }
+.order2-submit { min-height: 50px; padding: 0 17px; border-radius: 999px; background: var(--o2-lime); font-size: 13px; }
+.order2-submit:active { transform: translateY(1px) scale(.98); }
+.order2-switch-dialog { border-radius: 20px; }
+.order2-success { border-radius: 22px; background: #f8f9f5; }
+.order2-success button { border-radius: 999px; }
+
+@media (max-width: 1100px) {
+  .order2-header { grid-template-columns: 1fr; gap: 28px; }
+  .order2-layout { grid-template-columns: 1fr; }
+  .order2-summary { position: static; }
+}
+
+@media (max-width: 700px) {
+  .order2-page { width: min(100% - 24px, 1360px); padding-top: 14px; }
+  .order2-intro { padding: 24px 20px; border-radius: 18px; }
+  .order2-header { padding-top: 42px; }
+  .order2-header h1 { font-size: clamp(40px, 13vw, 56px); }
+  .order2-section { padding: 24px 18px; border-radius: 18px; }
+  .order2-service-grid > button { min-height: 108px; }
+  .order2-summary { padding: 24px 20px; border-radius: 18px; }
+}

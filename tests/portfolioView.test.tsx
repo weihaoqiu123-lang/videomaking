@@ -13,6 +13,7 @@ test('portfolio renders the IT media hero and approved entry points', () => {
   assert.match(html, /\/portfolio\/showreel\/still-01.webp/);
   assert.match(html, /HOOYA 视频制作服务页/);
   assert.match(html, /进入下单系统/);
+  assert.doesNotMatch(html, /class="hero-copy"[^>]*translateY/);
 });
 
 test('portfolio renders approved pricing and an illustration-only presentation team', () => {

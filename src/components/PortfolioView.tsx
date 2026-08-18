@@ -168,8 +168,8 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
 
         <motion.div
           className="hero-copy"
-          initial={reduceMotion ? false : { opacity: 0, y: 28 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={reduceMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         >
           <p className="eyebrow">VIDEO CREATIVE DEPARTMENT 2026</p>

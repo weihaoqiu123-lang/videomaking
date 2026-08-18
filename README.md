@@ -1,20 +1,24 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# HOOYA 视频任务管理 Demo
 
-# Run and deploy your AI Studio app
+公司内部视频服务作品集与下单流程演示，包含运营下单、视频人员任务查看和负责人审核页面。
 
-This contains everything you need to run your app locally.
+## 本地运行
 
-View your app in AI Studio: https://ai.studio/apps/249d715f-1674-4a30-abe2-2363279abd18
+需要 Node.js 22 或更高版本。
 
-## Run Locally
+```bash
+npm install
+npm run dev
+```
 
-**Prerequisites:**  Node.js
+然后在当前电脑打开：<http://127.0.0.1:3000/>
 
+该地址是本地开发预览，不是已部署的公网链接。关闭开发服务后，链接将无法访问。
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## 验证
+
+```bash
+npm test
+npm run lint
+npm run build
+```
