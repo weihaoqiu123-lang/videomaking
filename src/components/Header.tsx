@@ -67,7 +67,7 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="sticky top-0 z-40 bg-white border-b border-[#dfe1e6] shadow-xs">
       {/* Top Banner / Title & Role Switcher */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-4">
+        <div className="flex flex-wrap md:flex-nowrap items-center justify-between min-h-16 py-2 gap-2 md:gap-4">
           
           {/* Logo & System Title */}
           <div className="flex items-center gap-3 shrink-0">
@@ -86,14 +86,14 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Role Switcher Bar */}
-          <div className="flex items-center gap-1.5 bg-[#f4f7fa] p-1 rounded-lg border border-[#dfe1e6]">
+          <div className="order-3 md:order-none flex items-center gap-1.5 w-full md:w-auto max-w-full overflow-x-auto bg-[#f4f7fa] p-1 rounded-lg border border-[#dfe1e6]">
             {roles.map((r) => {
               const isActive = currentRole === r.id;
               return (
                 <button
                   key={r.id}
                   onClick={() => handleRoleSwitch(r.id)}
-                  className={`relative flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                  className={`relative shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                     isActive
                       ? 'bg-[#0052cc] text-white shadow-xs'
                       : 'text-[#6b778c] hover:text-[#172b4d] hover:bg-[#ebecf0]'
@@ -114,7 +114,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Actions & Utilities */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={onResetData}
               title="重置测试数据"
@@ -123,8 +123,8 @@ export const Header: React.FC<HeaderProps> = ({
               <RotateCcw className="w-3.5 h-3.5" />
               <span className="hidden md:inline">重置数据</span>
             </button>
-            <div className="h-4 w-px bg-[#dfe1e6]" />
-            <div className="flex items-center gap-2 text-xs text-[#6b778c] bg-[#f4f7fa] px-2.5 py-1 rounded-md border border-[#dfe1e6]">
+            <div className="hidden sm:block h-4 w-px bg-[#dfe1e6]" />
+            <div className="hidden sm:flex items-center gap-2 text-xs text-[#6b778c] bg-[#f4f7fa] px-2.5 py-1 rounded-md border border-[#dfe1e6]">
               <span className="w-2 h-2 rounded-full bg-[#36b37e] animate-pulse" />
               <span className="font-semibold text-[#172b4d]">
                 当前角色: {roles.find(r => r.id === currentRole)?.name}

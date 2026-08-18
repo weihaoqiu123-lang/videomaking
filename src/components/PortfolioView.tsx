@@ -22,6 +22,8 @@ import {
 interface PortfolioViewProps {
   onNavigateToOrderCreate: (videoTypeId?: ServiceId) => void;
   onSelectWorkToOrder?: (work?: PortfolioItem, videoTypeId?: ServiceId) => void;
+  focusWorkId?: string | null;
+  onFocusWorkConsumed?: () => void;
 }
 
 const WorkCard: React.FC<{
@@ -128,7 +130,11 @@ const WorkModal: React.FC<{
   );
 };
 
-export const PortfolioView: React.FC<PortfolioViewProps> = ({ onNavigateToOrderCreate }) => {
+export const PortfolioView: React.FC<PortfolioViewProps> = ({
+  onNavigateToOrderCreate,
+  focusWorkId,
+  onFocusWorkConsumed,
+}) => {
   const reduceMotion = useReducedMotion();
   const [activeWork, setActiveWork] = useState<PortfolioItem | null>(null);
   const [activeAiTier, setActiveAiTier] = useState<ServiceTierId>('standard');
@@ -137,6 +143,13 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({ onNavigateToOrderC
     const aiSection = portfolioSections.find((section) => section.serviceId === 'ai_showcase');
     return aiSection?.tiers?.find((tier) => tier.id === activeAiTier)?.works || [];
   }, [activeAiTier]);
+
+  useEffect(() => {
+    if (!focusWorkId) return;
+    const work = findPortfolioWork(focusWorkId);
+    if (work) setActiveWork(work);
+    onFocusWorkConsumed?.();
+  }, [focusWorkId, onFocusWorkConsumed]);
 
   const reveal = reduceMotion
     ? {}
@@ -163,7 +176,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({ onNavigateToOrderC
         >
           <span className="pv2-brand-line"><Sparkles size={15} /> HOOYA VIDEO</span>
           <h1 id="pv2-hero-title">HOOYA<br />视频制作服务页</h1>
-          <p>欢迎各位同事。这里汇总视频组近期优秀作品、服务类型和制作排期，确认需求后即可进入下单。</p>
+          <p>欢迎各位同事。这里汇总了视频组近期优秀作品、视频服务类型和制作排期，确认需求后即可进入下单。</p>
           <div className="pv2-hero-actions">
             <button type="button" className="pv2-button pv2-button-primary" onClick={() => document.getElementById('portfolio-work')?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' })}>
               查看作品 <ArrowRight size={16} />

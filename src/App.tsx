@@ -16,6 +16,7 @@ import { ManagerApprovalView } from './views/ManagerApprovalView';
 import { ManagerOverviewView } from './views/ManagerOverviewView';
 import { PortfolioView } from './components/PortfolioView';
 import { getMainStatusFromNode } from './utils/taskUtils';
+import type { ServiceId } from './data/serviceCatalog';
 
 export default function App() {
   const [currentRole, setCurrentRole] = useState<RoleType>('operator');
@@ -23,7 +24,8 @@ export default function App() {
 
   // Portfolio State & Pre-selected Order Options
   const [referenceWork, setReferenceWork] = useState<PortfolioItem | null>(null);
-  const [preselectedVideoTypeId, setPreselectedVideoTypeId] = useState<string | null>(null);
+  const [preselectedVideoTypeId, setPreselectedVideoTypeId] = useState<ServiceId | null>(null);
+  const [portfolioFocusWorkId, setPortfolioFocusWorkId] = useState<string | null>(null);
 
   // Application State
   const [tasks, setTasks] = useState<TaskItem[]>(INITIAL_TASKS);
@@ -229,7 +231,7 @@ export default function App() {
   };
 
   // Select work or video type from Portfolio and transition to order flow
-  const handleSelectWorkToOrder = (work?: PortfolioItem, videoTypeId?: string) => {
+  const handleSelectWorkToOrder = (work?: PortfolioItem, videoTypeId?: ServiceId) => {
     if (work) {
       setReferenceWork(work);
       setPreselectedVideoTypeId(work.videoTypeId);
@@ -274,8 +276,10 @@ export default function App() {
       <main className="flex-1">
         {currentRole === 'operator' && currentPage === 'portfolio' && (
           <PortfolioView
-            onNavigateToOrderCreate={(videoTypeId?: string) => handleSelectWorkToOrder(undefined, videoTypeId)}
+            onNavigateToOrderCreate={(videoTypeId?: ServiceId) => handleSelectWorkToOrder(undefined, videoTypeId)}
             onSelectWorkToOrder={handleSelectWorkToOrder}
+            focusWorkId={portfolioFocusWorkId}
+            onFocusWorkConsumed={() => setPortfolioFocusWorkId(null)}
           />
         )}
 
@@ -286,6 +290,10 @@ export default function App() {
             onSubmitTask={handleCreateTask}
             onNavigateToOrders={() => setCurrentPage('operator_orders')}
             onOpenPortfolio={() => setCurrentPage('portfolio')}
+            onOpenPortfolioWork={(workId) => {
+              setPortfolioFocusWorkId(workId);
+              setCurrentPage('portfolio');
+            }}
             referenceWork={referenceWork}
             preselectedVideoTypeId={preselectedVideoTypeId}
             onClearReferenceWork={() => {
