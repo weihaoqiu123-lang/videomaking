@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { ArrowLeft, ArrowRight, ExternalLink, Play, Volume2, VolumeX, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ExternalLink, Play, X } from 'lucide-react';
 import type { ServiceId, ServiceTierId } from '../data/serviceCatalog';
 import { AI_SHOWCASE_TIERS, SERVICE_CATALOG } from '../data/serviceCatalog';
 import {
@@ -18,16 +18,10 @@ interface PortfolioViewProps {
   onFocusWorkConsumed?: () => void;
 }
 
-const HERO_VIDEO_URL = 'https://videos.pexels.com/video-files/853800/853800-hd_1920_1080_30fps.mp4';
-const marqueeStills = Array.from(
-  { length: 21 },
-  (_, index) => `/portfolio/showreel/still-${String(index + 1).padStart(2, '0')}.webp`,
+const staticGalleryStills = Array.from(
+  { length: 8 },
+  (_, index) => `/portfolio/showreel/still-${String(index + 2).padStart(2, '0')}.webp`,
 );
-const marqueeRows = [
-  marqueeStills.slice(0, 7),
-  marqueeStills.slice(7, 14),
-  marqueeStills.slice(14, 21),
-];
 
 const WorkModal: React.FC<{ work: PortfolioItem | null; onClose: () => void }> = ({ work, onClose }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -103,9 +97,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   onFocusWorkConsumed,
 }) => {
   const reduceMotion = useReducedMotion();
-  const heroVideoRef = useRef<HTMLVideoElement>(null);
   const memberRailRef = useRef<HTMLDivElement>(null);
-  const [muted, setMuted] = useState(true);
   const [activeWork, setActiveWork] = useState<PortfolioItem | null>(null);
   const [activeAiTier, setActiveAiTier] = useState<ServiceTierId>('standard');
 
@@ -120,12 +112,6 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
     if (work) setActiveWork(work);
     onFocusWorkConsumed?.();
   }, [focusWorkId, onFocusWorkConsumed]);
-
-  const toggleSound = () => {
-    if (!heroVideoRef.current) return;
-    heroVideoRef.current.muted = !heroVideoRef.current.muted;
-    setMuted(heroVideoRef.current.muted);
-  };
 
   const scrollMembers = (direction: number) => {
     memberRailRef.current?.scrollBy({ left: direction * 360, behavior: reduceMotion ? 'auto' : 'smooth' });
@@ -144,19 +130,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
     <div className="portfolio-root">
       <section className="hero" id="top" aria-labelledby="portfolio-hero-title">
         <div className="hero-media" aria-hidden="true">
-          <img className="hero-fallback" src="/portfolio/showreel/still-01.webp" alt="" />
-          <video
-            ref={heroVideoRef}
-            className="hero-video"
-            autoPlay={!reduceMotion}
-            muted
-            loop
-            playsInline
-            poster="/portfolio/showreel/still-01.webp"
-            onError={(event) => { event.currentTarget.style.display = 'none'; }}
-          >
-            <source src={HERO_VIDEO_URL} type="video/mp4" />
-          </video>
+          <img className="hero-fallback" src="/portfolio/hero/hero-studio-clean.webp" alt="" />
           <div className="hero-media-tint" />
         </div>
 
@@ -181,9 +155,6 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
           </div>
         </motion.div>
 
-        <button className="sound-toggle" type="button" onClick={toggleSound} aria-label={muted ? '打开背景视频声音' : '关闭背景视频声音'}>
-          {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}{muted ? 'SOUND OFF' : 'SOUND ON'}
-        </button>
       </section>
 
       <section className="work-section" id="portfolio-work" aria-labelledby="popular-title">
@@ -205,13 +176,11 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
           </div>
         </div>
 
-        <div className="portfolio-showreel" aria-label="作品画面预览">
-          {marqueeRows.map((row, rowIndex) => (
-            <div className={`showreel-row row-${rowIndex + 1}`} key={rowIndex}>
-              <div className="showreel-track">
-                {[...row, ...row].map((image, imageIndex) => <img key={`${rowIndex}-${imageIndex}`} src={image} alt="" loading="lazy" />)}
-              </div>
-            </div>
+        <div className="portfolio-static-grid" aria-label="作品画面预览">
+          {staticGalleryStills.map((image) => (
+            <figure className="portfolio-static-card" key={image}>
+              <img src={image} alt="" loading="lazy" />
+            </figure>
           ))}
         </div>
 
