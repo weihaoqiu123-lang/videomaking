@@ -1,3 +1,5 @@
+import type { FormatId, ServiceId, ServiceTierId } from './data/serviceCatalog';
+
 export type RoleType = 'operator' | 'video_creator' | 'manager';
 
 export type NavPage =
@@ -19,7 +21,7 @@ export type NodeStage =
   | 'finished';        // 完结
 
 export interface VideoType {
-  id: string;
+  id: ServiceId;
   num: string;
   name: string;
   shortDesc: string;
@@ -31,10 +33,10 @@ export interface VideoPersonnel {
   name: string;
   avatar: string;
   specialty: string;
-  supportedTypeIds: string[];
+  supportedTypeIds: ServiceId[];
   currentTasks: number; // 内部保留任务数量做逻辑计算，但不向运营展示具体数字
   maxTasks: number; // 20
-  status: 'idle' | 'busy' | 'full'; // 0-10: idle(正常), 11-19: busy(较忙), 20: full(满载)
+  status: 'idle' | 'normal' | 'busy' | 'full'; // 兼容旧视图，展示状态以 currentTasks 实时计算为准
   estimatedStartText: string;
 }
 
@@ -84,6 +86,16 @@ export interface TaskItem {
   productLink?: string;
   videoTypeId: string;
   videoTypeName: string;
+  serviceId?: ServiceId;
+  intendedUses?: string[];
+  serviceTierId?: ServiceTierId;
+  serviceTierName?: string;
+  outputFormatId?: FormatId;
+  outputFormatName?: string;
+  quantity?: number;
+  basePrice?: number | null;
+  urgentApprovedPrice?: number | null;
+  serviceDetails?: Record<string, string | number | boolean | string[]>;
   videoPersonId: string;
   videoPersonName: string;
   isUrgent: boolean;

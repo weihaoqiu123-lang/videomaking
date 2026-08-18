@@ -82,7 +82,7 @@ export default function App() {
           return {
             ...p,
             currentTasks: newCurrent,
-            status: newCurrent >= p.maxTasks ? 'full' : newCurrent >= 11 ? 'busy' : 'idle'
+            status: newCurrent >= p.maxTasks ? 'full' : newCurrent >= 11 ? 'busy' : newCurrent >= 6 ? 'normal' : 'idle'
           };
         }
         return p;
@@ -192,7 +192,7 @@ export default function App() {
                   return {
                     ...p,
                     currentTasks: newCount,
-                    status: newCount >= p.maxTasks ? 'full' : newCount >= 11 ? 'busy' : 'idle'
+                    status: newCount >= p.maxTasks ? 'full' : newCount >= 11 ? 'busy' : newCount >= 6 ? 'normal' : 'idle'
                   };
                 }
                 return p;

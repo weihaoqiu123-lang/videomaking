@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { SERVICE_CATALOG } from '../src/data/serviceCatalog';
+import { INITIAL_VIDEO_PERSONNEL, INITIAL_VIDEO_TYPES } from '../src/data/mockData';
 import {
   calculateBasePrice,
   calculateUrgentPrice,
@@ -79,4 +80,24 @@ test('creator support is limited to configured service ids', () => {
 
   assert.equal(supportsService(supported, 'ugc'), true);
   assert.equal(supportsService(supported, 'installation'), false);
+});
+
+test('personnel roster covers every standard service with selectable creators', () => {
+  const standardServiceIds = SERVICE_CATALOG
+    .filter((service) => !service.customQuote)
+    .map((service) => service.id);
+
+  for (const serviceId of standardServiceIds) {
+    const selectableCreators = INITIAL_VIDEO_PERSONNEL.filter(
+      (person) => person.currentTasks < person.maxTasks && person.supportedTypeIds.includes(serviceId),
+    );
+    assert.ok(selectableCreators.length >= 2, `${serviceId} needs two selectable creators`);
+  }
+});
+
+test('video type choices mirror the single service catalog', () => {
+  assert.deepEqual(
+    INITIAL_VIDEO_TYPES.map((type) => type.id),
+    SERVICE_CATALOG.map((service) => service.id),
+  );
 });

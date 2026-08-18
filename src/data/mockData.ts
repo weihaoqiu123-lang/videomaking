@@ -1,51 +1,22 @@
 import { VideoType, VideoPersonnel, TaskItem } from '../types';
+import { SERVICE_CATALOG } from './serviceCatalog';
 
-export const INITIAL_VIDEO_TYPES: VideoType[] = [
-  {
-    id: 'vt_01',
-    num: '01',
-    name: '实拍展示',
-    shortDesc: '真实场景拍摄，突出产品质感与功能细节',
-    needsShoot: true
-  },
-  {
-    id: 'vt_02',
-    num: '02',
-    name: '安装视频',
-    shortDesc: '分步清晰展示拆解与组装流程，消解售后退货疑虑',
-    needsShoot: true
-  },
-  {
-    id: 'vt_03',
-    num: '03',
-    name: 'AI视频',
-    shortDesc: '生成式AI合成多场景与动态粒子流效',
-    needsShoot: false
-  },
-  {
-    id: 'vt_04',
-    num: '04',
-    name: '精品广告',
-    shortDesc: '三维力学与高光影大片，契合核心爆品高转化投放',
-    needsShoot: true
-  },
-  {
-    id: 'vt_05',
-    num: '05',
-    name: '剪辑',
-    shortDesc: '已有素材二次调优、节奏剪辑与字幕贴图合成',
-    needsShoot: false
-  }
-];
+export const INITIAL_VIDEO_TYPES: VideoType[] = SERVICE_CATALOG.map((service) => ({
+  id: service.id,
+  num: service.number,
+  name: service.name,
+  shortDesc: service.summary,
+  needsShoot: ['live_showcase', 'installation', 'custom'].includes(service.id),
+}));
 
 export const INITIAL_VIDEO_PERSONNEL: VideoPersonnel[] = [
   {
     id: 'vp_zhangchen',
     name: '张晨',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-    specialty: '产品实拍 / 安装视频',
-    supportedTypeIds: ['vt_01', 'vt_02', 'vt_04'],
-    currentTasks: 5,
+    specialty: '产品实拍 / 安装 / 专项拍摄',
+    supportedTypeIds: ['live_showcase', 'installation', 'custom'],
+    currentTasks: 3,
     maxTasks: 20,
     status: 'idle', // 正常
     estimatedStartText: '预计约1周后开始'
@@ -54,20 +25,20 @@ export const INITIAL_VIDEO_PERSONNEL: VideoPersonnel[] = [
     id: 'vp_lihao',
     name: '李浩',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-    specialty: '实拍 / 剪辑',
-    supportedTypeIds: ['vt_01', 'vt_05'],
+    specialty: '实拍 / UGC / 剪辑',
+    supportedTypeIds: ['live_showcase', 'ugc', 'editing'],
     currentTasks: 8,
     maxTasks: 20,
-    status: 'idle', // 正常
+    status: 'normal',
     estimatedStartText: '预计约2周后开始'
   },
   {
     id: 'vp_wangmin',
     name: '王敏',
     avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
-    specialty: 'AI视频 / 精品广告',
-    supportedTypeIds: ['vt_03', 'vt_04'],
-    currentTasks: 13,
+    specialty: 'AI 展示 / UGC / 精品广告',
+    supportedTypeIds: ['ai_showcase', 'ugc', 'ai_premium'],
+    currentTasks: 14,
     maxTasks: 20,
     status: 'busy', // 较忙
     estimatedStartText: '预计约3周后开始'
@@ -76,8 +47,8 @@ export const INITIAL_VIDEO_PERSONNEL: VideoPersonnel[] = [
     id: 'vp_chenkai',
     name: '陈凯',
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
-    specialty: '产品实拍 / 剪辑',
-    supportedTypeIds: ['vt_01', 'vt_05'],
+    specialty: '产品实拍 / 安装 / 剪辑',
+    supportedTypeIds: ['live_showcase', 'installation', 'editing'],
     currentTasks: 18,
     maxTasks: 20,
     status: 'busy', // 较忙
@@ -87,19 +58,19 @@ export const INITIAL_VIDEO_PERSONNEL: VideoPersonnel[] = [
     id: 'vp_zhouyu',
     name: '周宇',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=80',
-    specialty: '视频剪辑',
-    supportedTypeIds: ['vt_05'],
+    specialty: 'UGC / 视频剪辑',
+    supportedTypeIds: ['ugc', 'editing'],
     currentTasks: 20,
     maxTasks: 20,
-    status: 'full', // 满载 (禁用)
+    status: 'full',
     estimatedStartText: '暂不可接单'
   },
   {
     id: 'vp_zhaoqi',
     name: '赵琪',
     avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
-    specialty: '数码实拍 / 测评',
-    supportedTypeIds: ['vt_01', 'vt_04'],
+    specialty: '数码实拍 / UGC / 精品广告',
+    supportedTypeIds: ['live_showcase', 'ugc', 'ai_premium'],
     currentTasks: 3,
     maxTasks: 20,
     status: 'idle', // 正常
@@ -109,8 +80,8 @@ export const INITIAL_VIDEO_PERSONNEL: VideoPersonnel[] = [
     id: 'vp_liuwei',
     name: '刘伟',
     avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=200&q=80',
-    specialty: '3D安装与渲染',
-    supportedTypeIds: ['vt_02', 'vt_03'],
+    specialty: 'AI 展示 / 安装 / 精品广告',
+    supportedTypeIds: ['ai_showcase', 'installation', 'ai_premium'],
     currentTasks: 11,
     maxTasks: 20,
     status: 'busy', // 较忙
@@ -120,11 +91,11 @@ export const INITIAL_VIDEO_PERSONNEL: VideoPersonnel[] = [
     id: 'vp_sunyue',
     name: '孙悦',
     avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
-    specialty: '短视频调优与混剪',
-    supportedTypeIds: ['vt_01', 'vt_05'],
+    specialty: 'AI 展示 / UGC / 混剪',
+    supportedTypeIds: ['ai_showcase', 'ugc', 'editing'],
     currentTasks: 7,
     maxTasks: 20,
-    status: 'idle', // 正常
+    status: 'normal',
     estimatedStartText: '预计约2周后开始'
   }
 ];
