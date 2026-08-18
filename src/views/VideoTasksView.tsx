@@ -8,9 +8,11 @@ import {
   Eye,
   Clock,
   CheckCircle2,
+  GripVertical,
   SlidersHorizontal,
   Search
 } from 'lucide-react';
+import { orderVideoTasks, reorderVideoTasks } from '../utils/taskUtils';
 
 interface VideoTasksViewProps {
   tasks: TaskItem[];
@@ -27,6 +29,9 @@ export const VideoTasksView: React.FC<VideoTasksViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [processingTask, setProcessingTask] = useState<TaskItem | null>(null);
   const [activeDrawerTask, setActiveDrawerTask] = useState<TaskItem | null>(null);
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [manualOrderByTab, setManualOrderByTab] = useState<Record<string, string[]>>({});
+  const [orderNotice, setOrderNotice] = useState('');
 
   // Form State for Node Execution
   const [appointmentDate, setAppointmentDate] = useState('2026-08-13 10:00');
@@ -81,14 +86,29 @@ export const VideoTasksView: React.FC<VideoTasksViewProps> = ({
       ? reviewingTasks
       : completedTasks;
 
-  // Sorting rule:
-  // Priority 1: isUrgent === true at top
-  // Priority 2: FIFO (createdAt ascending)
-  const sortedTasks = [...currentRawTasks].sort((a, b) => {
-    if (a.isUrgent && !b.isUrgent) return -1;
-    if (!a.isUrgent && b.isUrgent) return 1;
-    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-  });
+  const sortedTasks = orderVideoTasks<TaskItem>(currentRawTasks, manualOrderByTab[activeTab]);
+
+  const handleTaskDrop = (targetTaskId: string) => {
+    if (!draggedTaskId) return;
+
+    const source = sortedTasks.find((task) => task.id === draggedTaskId);
+    const target = sortedTasks.find((task) => task.id === targetTaskId);
+    if (!source || !target) return;
+
+    if (source.isUrgent !== target.isUrgent) {
+      setOrderNotice('加急任务和普通任务只能在各自区域内调整。');
+      setDraggedTaskId(null);
+      return;
+    }
+
+    const reordered = reorderVideoTasks<TaskItem>(sortedTasks, draggedTaskId, targetTaskId);
+    setManualOrderByTab((current) => ({
+      ...current,
+      [activeTab]: reordered.map((task) => task.id),
+    }));
+    setOrderNotice('任务顺序已更新');
+    setDraggedTaskId(null);
+  };
 
   // Node Completion Handler
   const handleCompleteCurrentNode = (task: TaskItem) => {
@@ -183,7 +203,7 @@ export const VideoTasksView: React.FC<VideoTasksViewProps> = ({
       <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-600 flex flex-wrap items-center justify-between gap-3">
         <span className="flex items-center gap-1.5 font-medium">
           <SlidersHorizontal className="w-4 h-4 text-blue-600 shrink-0" />
-          默认排序逻辑：加急任务置顶优先处理，其余任务按进入时间正序（FIFO）排列。
+          默认加急优先、同级按时间正序；拖动任务行左侧手柄可在同一优先级内调整。
         </span>
 
         <div className="relative">
@@ -198,6 +218,12 @@ export const VideoTasksView: React.FC<VideoTasksViewProps> = ({
         </div>
       </div>
 
+      {orderNotice && (
+        <div className={`rounded-lg border px-3 py-2 text-xs font-semibold ${orderNotice === '任务顺序已更新' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
+          {orderNotice}
+        </div>
+      )}
+
       {/* Tasks Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
@@ -207,7 +233,7 @@ export const VideoTasksView: React.FC<VideoTasksViewProps> = ({
                 <th className="px-4 py-3.5">优先级</th>
                 <th className="px-4 py-3.5">任务单号 / SKU</th>
                 <th className="px-4 py-3.5">产品信息</th>
-                <th className="px-4 py-3.5">视频类型 / 风格</th>
+                <th className="px-4 py-3.5">视频类型 / 规格</th>
                 <th className="px-4 py-3.5">当前节点</th>
                 <th className="px-4 py-3.5">提单时间</th>
                 <th className="px-4 py-3.5 text-right">操作</th>
@@ -222,17 +248,35 @@ export const VideoTasksView: React.FC<VideoTasksViewProps> = ({
                 </tr>
               ) : (
                 sortedTasks.map((t, idx) => (
-                  <tr key={t.id} className={`hover:bg-slate-50/80 transition-colors ${t.isUrgent ? 'bg-rose-50/30' : ''}`}>
+                  <tr
+                    key={t.id}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={() => handleTaskDrop(t.id)}
+                    className={`hover:bg-slate-50/80 transition-colors ${t.isUrgent ? 'bg-rose-50/30' : ''} ${draggedTaskId === t.id ? 'opacity-50' : ''}`}
+                  >
                     
                     {/* Priority */}
                     <td className="px-4 py-3.5 whitespace-nowrap">
-                      {t.isUrgent ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rose-100 text-rose-800 font-bold border border-rose-200 text-[11px]">
-                          <Zap className="w-3 h-3 text-rose-600 fill-rose-600" /> 加急置顶
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 font-mono text-[11px]">P{idx + 1}</span>
-                      )}
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          draggable
+                          onDragStart={() => { setDraggedTaskId(t.id); setOrderNotice(''); }}
+                          onDragEnd={() => setDraggedTaskId(null)}
+                          aria-label={`拖动调整 ${t.taskNo} 的顺序`}
+                          title="拖动调整同级任务顺序"
+                          className="cursor-grab rounded p-0.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 active:cursor-grabbing"
+                        >
+                          <GripVertical className="h-4 w-4" />
+                        </button>
+                        {t.isUrgent ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rose-100 text-rose-800 font-bold border border-rose-200 text-[11px]">
+                            <Zap className="w-3 h-3 text-rose-600 fill-rose-600" /> 加急置顶
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 font-mono text-[11px]">P{idx + 1}</span>
+                        )}
+                      </div>
                     </td>
 
                     {/* Task No / SKU */}
@@ -255,7 +299,7 @@ export const VideoTasksView: React.FC<VideoTasksViewProps> = ({
                     {/* Video Type */}
                     <td className="px-4 py-3.5 whitespace-nowrap">
                       <span className="font-medium text-slate-800 block">{t.videoTypeName}</span>
-                      <span className="text-[10px] text-slate-400 block">{t.styleName || '标准样式'}</span>
+                      <span className="text-[10px] text-slate-400 block">{t.serviceTierName || t.outputFormatName || '标准规格'}</span>
                     </td>
 
                     {/* Node */}

@@ -15,8 +15,14 @@ import { VideoTasksView } from './views/VideoTasksView';
 import { ManagerApprovalView } from './views/ManagerApprovalView';
 import { ManagerOverviewView } from './views/ManagerOverviewView';
 import { PortfolioView } from './components/PortfolioView';
-import { getMainStatusFromNode } from './utils/taskUtils';
+import { getInitialNodeForService, getMainStatusFromNode } from './utils/taskUtils';
 import type { ServiceId } from './data/serviceCatalog';
+
+export const scrollPageToTop = (
+  scrollTo: (options: ScrollToOptions) => void = (options) => window.scrollTo(options),
+) => {
+  scrollTo({ top: 0, left: 0, behavior: 'auto' });
+};
 
 export default function App() {
   const [currentRole, setCurrentRole] = useState<RoleType>('operator');
@@ -153,9 +159,9 @@ export default function App() {
             ...t,
             isUrgent: approved,
             urgencyStatus: approved ? 'approved' : 'rejected',
-            currentNode: 'appointment',
-            currentNodeName: '待处理',
-            mainStatus: 'pending',
+            currentNode: getInitialNodeForService(t.serviceId || t.videoTypeId, false),
+            currentNodeName: (t.serviceId || t.videoTypeId) === 'editing' ? '剪辑中' : '待处理',
+            mainStatus: getMainStatusFromNode(getInitialNodeForService(t.serviceId || t.videoTypeId, false)),
             updatedAt: nowStr,
             logs: [
               ...t.logs,
@@ -240,6 +246,7 @@ export default function App() {
     }
     setCurrentRole('operator');
     setCurrentPage('order_create');
+    scrollPageToTop();
   };
 
   // Reset Mock Data

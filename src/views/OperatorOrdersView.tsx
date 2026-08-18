@@ -114,7 +114,7 @@ export const OperatorOrdersView: React.FC<OperatorOrdersViewProps> = ({
               <tr>
                 <th className="px-4 py-3.5">任务单号 / SKU</th>
                 <th className="px-4 py-3.5">产品信息</th>
-                <th className="px-4 py-3.5">视频类型 / 风格</th>
+                <th className="px-4 py-3.5">视频类型 / 规格</th>
                 <th className="px-4 py-3.5">视频人员</th>
                 <th className="px-4 py-3.5">紧急度</th>
                 <th className="px-4 py-3.5">主状态 / 当前节点</th>
@@ -156,7 +156,7 @@ export const OperatorOrdersView: React.FC<OperatorOrdersViewProps> = ({
                     {/* Type */}
                     <td className="px-4 py-3.5 whitespace-nowrap">
                       <span className="font-medium text-slate-800 block">{t.videoTypeName}</span>
-                      <span className="text-[10px] text-slate-400 block">{t.styleName || '标准样式'}</span>
+                      <span className="text-[10px] text-slate-400 block">{t.serviceTierName || t.outputFormatName || '标准规格'}</span>
                     </td>
 
                     {/* Person */}

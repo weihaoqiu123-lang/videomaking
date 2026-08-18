@@ -30,8 +30,9 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
 }) => {
   if (!task) return null;
 
-  const steps = getNodeSteps();
-  const currentStepIdx = getNodeOrder(task.currentNode);
+  const serviceId = task.serviceId || task.videoTypeId;
+  const steps = getNodeSteps(serviceId);
+  const currentStepIdx = getNodeOrder(task.currentNode, serviceId);
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">

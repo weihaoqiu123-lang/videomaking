@@ -105,8 +105,6 @@ export interface TaskItem {
   contentFocus?: string;
   
   // 视频制作要求
-  style: 'simple' | 'ai' | 'refined';
-  styleName: string;
   videoRatio: '16:9' | '9:16' | '1:1';
   videoDuration: '<30s' | '<60s' | '<90s' | '自定义';
   needsPerson: boolean;

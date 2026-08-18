@@ -17,6 +17,7 @@ import {
 import {
   calculateBasePrice, calculateUrgentPrice, getPersonnelLoad, supportsService,
 } from '../utils/serviceRules';
+import { getInitialNodeForService, getMainStatusFromNode } from '../utils/taskUtils';
 
 interface OrderCreateViewProps {
   videoTypes: VideoType[];
@@ -67,11 +68,11 @@ export const OrderCreateView: React.FC<OrderCreateViewProps> = ({
   const [serviceId, setServiceId] = useState<ServiceId>(initialServiceId);
   const [pendingServiceId, setPendingServiceId] = useState<ServiceId | null>(null);
   const [skuRows, setSkuRows] = useState<SkuRow[]>([
-    { sku: referenceWork?.sku || 'TP10241PI', name: referenceWork?.productName || '电子炉灶厨房玩具套装' },
+    { sku: referenceWork?.sku || '', name: referenceWork?.productName || '' },
   ]);
-  const [productCategory] = useState('儿童玩具 / 模拟厨房');
-  const [productLink, setProductLink] = useState('https://www.amazon.com/dp/B08X9ZPXYZ');
-  const [productImage] = useState(referenceWork?.image || 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&w=800&q=80');
+  const [productCategory] = useState('');
+  const [productLink, setProductLink] = useState('');
+  const [productImage] = useState(referenceWork?.image || '');
   const [details, setDetails] = useState(initialDetails);
   const [sampleStatus, setSampleStatus] = useState('待寄送');
   const [needsNarration, setNeedsNarration] = useState(false);
@@ -174,11 +175,12 @@ export const OrderCreateView: React.FC<OrderCreateViewProps> = ({
       videoPersonId: selectedPerson.id, videoPersonName: selectedPerson.name,
       isUrgent, urgencyStatus: isUrgent ? 'pending' : undefined,
       targetDate: expectedDate || undefined,
-      style: serviceId === 'ai_showcase' || serviceId === 'ai_premium' ? 'ai' : 'refined',
-      styleName: specificationSummary, videoRatio: ratio, videoDuration: legacyDuration,
+      videoRatio: ratio, videoDuration: legacyDuration,
       needsPerson: needsNarration, sampleStatus: legacySample, remarks,
-      mainStatus: 'pending', currentNode: isUrgent ? 'pending_urgency' : 'appointment',
-      currentNodeName: isUrgent ? '待加急审核' : '待处理', creatorName: '运营-刘敏',
+      mainStatus: getMainStatusFromNode(getInitialNodeForService(serviceId, isUrgent)),
+      currentNode: getInitialNodeForService(serviceId, isUrgent),
+      currentNodeName: isUrgent ? '待加急审核' : serviceId === 'editing' ? '剪辑中' : '待处理',
+      creatorName: '运营-刘敏',
     });
     setSubmittedPerson(selectedPerson.name); setIsSubmitted(true);
   };
@@ -223,7 +225,7 @@ export const OrderCreateView: React.FC<OrderCreateViewProps> = ({
             {skuRows.map((row, index) => <div className="order2-sku-row" key={index}><Field label={`SKU ${index + 1}`}><input value={row.sku} onChange={(e) => updateSku(index, 'sku', e.target.value)} placeholder="输入产品货号" /></Field><Field label="产品名称"><input value={row.name} onChange={(e) => updateSku(index, 'name', e.target.value)} placeholder="输入产品名称" /></Field>{serviceId === 'ai_premium' && skuRows.length > 1 && <button type="button" onClick={() => setSkuRows((rows) => rows.filter((_, i) => i !== index))} aria-label="删除 SKU"><Trash2 size={17} /></button>}</div>)}
             {serviceId === 'ai_premium' && <button type="button" className="order2-add-row" onClick={() => setSkuRows((rows) => [...rows, { sku: '', name: '' }])}><Plus size={15} /> 添加一个 SKU</button>}
           </div>}
-          {serviceId === 'ai_showcase' && <div className="order2-fields"><Field label="商品链接"><input value={productLink} onChange={(e) => setProductLink(e.target.value)} /></Field><Field label="产品图片与资料地址"><input value={details.materialUrl} onChange={(e) => updateDetail('materialUrl', e.target.value)} placeholder="https:// 或内部共享盘地址" /></Field></div>}
+          {serviceId === 'ai_showcase' && <div className="order2-fields"><Field label="商品链接"><input value={productLink} onChange={(e) => setProductLink(e.target.value)} placeholder="输入商品链接" /></Field><Field label="产品图片与资料地址"><input value={details.materialUrl} onChange={(e) => updateDetail('materialUrl', e.target.value)} placeholder="https:// 或内部共享盘地址" /></Field></div>}
           {serviceId === 'live_showcase' && <><div className="order2-fields"><Field label="实拍要求"><textarea value={details.requirements} onChange={(e) => updateDetail('requirements', e.target.value)} placeholder="需要重点展示的结构、材质、场景或动作" /></Field><Field label="样品状态"><select value={sampleStatus} onChange={(e) => setSampleStatus(e.target.value)}>{config.sampleStatuses?.map((status) => <option key={status}>{status}</option>)}</select></Field></div><label className="order2-checkline"><input type="checkbox" checked={needsNarration} onChange={(e) => setNeedsNarration(e.target.checked)} />需要人物讲解</label></>}
           {serviceId === 'ugc' && <div className="order2-fields"><Field label="产品资料地址"><input value={details.materialUrl} onChange={(e) => updateDetail('materialUrl', e.target.value)} placeholder="产品资料或商品链接" /></Field><Field label="核心卖点与表达方向"><textarea value={details.sellingPoints} onChange={(e) => updateDetail('sellingPoints', e.target.value)} placeholder="填写希望测试的钩子、痛点或卖点" /></Field></div>}
           {serviceId === 'ai_premium' && <div className="order2-fields"><Field label="项目目标"><textarea value={details.projectGoal} onChange={(e) => updateDetail('projectGoal', e.target.value)} placeholder="这支广告需要解决什么问题" /></Field><Field label="品牌资料地址"><input value={details.brandAssetUrl} onChange={(e) => updateDetail('brandAssetUrl', e.target.value)} placeholder="品牌规范、Logo、字体或素材包" /></Field><Field label="参考方向"><input value={details.referenceUrl} onChange={(e) => updateDetail('referenceUrl', e.target.value)} placeholder="参考作品或 moodboard 地址" /></Field></div>}

@@ -6,7 +6,14 @@ export interface StepDefinition {
   roleHint: string;
 }
 
-export const getNodeSteps = (): StepDefinition[] => {
+export const getNodeSteps = (serviceId?: string): StepDefinition[] => {
+  if (serviceId === 'editing') {
+    return [
+      { key: 'editing', label: '剪辑', roleHint: '视频人员' },
+      { key: 'manager_review', label: '负责人终审', roleHint: '视频负责人' },
+      { key: 'finished', label: '完结', roleHint: '系统完结' }
+    ];
+  }
   return [
     { key: 'appointment', label: '待处理', roleHint: '视频人员' },
     { key: 'shooting', label: '拍摄', roleHint: '视频人员' },
@@ -48,17 +55,22 @@ export const getNodeBadge = (node: NodeStage) => {
   }
 };
 
-export const getNodeOrder = (node: NodeStage): number => {
+export const getNodeOrder = (node: NodeStage, serviceId?: string): number => {
   if (node === 'pending_urgency') return -1;
-  const steps = getNodeSteps();
+  const steps = getNodeSteps(serviceId);
   const idx = steps.findIndex(s => s.key === node);
   return idx !== -1 ? idx : 0;
 };
 
 // Returns next node in sequential order
-export const getNextNode = (currentNode: NodeStage): NodeStage => {
-  if (currentNode === 'pending_urgency') return 'appointment';
-  const steps = getNodeSteps();
+export const getInitialNodeForService = (serviceId: string, isUrgent: boolean): NodeStage => {
+  if (isUrgent) return 'pending_urgency';
+  return serviceId === 'editing' ? 'editing' : 'appointment';
+};
+
+export const getNextNode = (currentNode: NodeStage, serviceId?: string): NodeStage => {
+  if (currentNode === 'pending_urgency') return getInitialNodeForService(serviceId || '', false);
+  const steps = getNodeSteps(serviceId);
   const idx = steps.findIndex(s => s.key === currentNode);
   if (idx >= 0 && idx < steps.length - 1) {
     return steps[idx + 1].key;
@@ -72,4 +84,46 @@ export const getMainStatusFromNode = (node: NodeStage): MainStatus => {
   if (node === 'shooting' || node === 'editing') return 'in_progress';
   if (node === 'manager_review') return 'reviewing';
   return 'completed';
+};
+
+interface VideoQueueTask {
+  id: string;
+  isUrgent: boolean;
+  createdAt: string;
+}
+
+export const orderVideoTasks = <T extends VideoQueueTask>(
+  tasks: T[],
+  manualOrder: string[] = [],
+): T[] => {
+  const manualRank = new Map(manualOrder.map((taskId, index) => [taskId, index]));
+
+  return [...tasks].sort((a, b) => {
+    if (a.isUrgent !== b.isUrgent) return a.isUrgent ? -1 : 1;
+
+    const rankA = manualRank.get(a.id);
+    const rankB = manualRank.get(b.id);
+    if (rankA !== undefined && rankB !== undefined) return rankA - rankB;
+    if (rankA !== undefined) return -1;
+    if (rankB !== undefined) return 1;
+
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  });
+};
+
+export const reorderVideoTasks = <T extends VideoQueueTask>(
+  tasks: T[],
+  sourceId: string,
+  targetId: string,
+): T[] => {
+  if (sourceId === targetId) return [...tasks];
+
+  const source = tasks.find((task) => task.id === sourceId);
+  const target = tasks.find((task) => task.id === targetId);
+  if (!source || !target || source.isUrgent !== target.isUrgent) return [...tasks];
+
+  const reordered = tasks.filter((task) => task.id !== sourceId);
+  const targetIndex = reordered.findIndex((task) => task.id === targetId);
+  reordered.splice(targetIndex, 0, source);
+  return reordered;
 };
